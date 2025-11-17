@@ -152,6 +152,7 @@ Yes, edit any product and you'll find a "Geo Restrictions" metabox where you can
 * Fixed: Multi-tab form handling - settings from inactive tabs are now preserved when saving
 * Fixed: Checkbox handling - unchecked checkboxes now properly saved instead of reverting
 * Fixed: PHP warnings for missing field indices with proper isset() checks
+* Fixed: WooCommerce HPOS compatibility - declared support for High-Performance Order Storage
 * Improved: Settings merge logic to prevent data loss between tabs
 
 = 1.0.0 - 2024-01-15 =

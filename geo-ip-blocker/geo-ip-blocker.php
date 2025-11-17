@@ -140,6 +140,7 @@ final class Geo_IP_Blocker {
 		add_action( 'plugins_loaded', array( $this, 'maybe_upgrade_database' ) );
 		add_action( 'plugins_loaded', array( $this, 'check_version' ) );
 		add_action( 'init', array( $this, 'check_requirements' ) );
+		add_action( 'before_woocommerce_init', array( $this, 'declare_woocommerce_compatibility' ) );
 	}
 
 	/**
@@ -196,6 +197,23 @@ final class Geo_IP_Blocker {
 			false,
 			dirname( GEO_IP_BLOCKER_PLUGIN_BASENAME ) . '/languages'
 		);
+	}
+
+	/**
+	 * Declare WooCommerce HPOS compatibility.
+	 *
+	 * Declares compatibility with WooCommerce High-Performance Order Storage (HPOS).
+	 *
+	 * @since 1.0.1
+	 */
+	public function declare_woocommerce_compatibility() {
+		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'custom_order_tables',
+				GEO_IP_BLOCKER_PLUGIN_FILE,
+				true
+			);
+		}
 	}
 
 	/**
