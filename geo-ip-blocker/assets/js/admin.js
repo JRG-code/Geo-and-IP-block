@@ -151,6 +151,17 @@
 				// Prepare form data
 				const formData = new FormData($form[0]);
 
+				// Add unchecked checkboxes explicitly as "0"
+				// Checkboxes that are not checked don't get submitted
+				$form.find('input[type="checkbox"]').each(function() {
+					const $checkbox = $(this);
+					const name = $checkbox.attr('name');
+
+					if (name && !$checkbox.is(':checked')) {
+						formData.append(name, '0');
+					}
+				});
+
 				// Convert FormData to object for AJAX
 				const settings = {};
 				formData.forEach((value, key) => {

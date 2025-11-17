@@ -161,27 +161,27 @@ class Geo_IP_Blocker_Settings_Page {
 
 		// General Settings.
 		$sanitized['enabled']              = ! empty( $input['enabled'] );
-		$sanitized['blocking_mode']        = in_array( $input['blocking_mode'], array( 'whitelist', 'blacklist' ), true ) ? $input['blocking_mode'] : 'blacklist';
-		$sanitized['block_action']         = in_array( $input['block_action'], array( 'message', 'redirect', 'page', '403' ), true ) ? $input['block_action'] : 'message';
-		$sanitized['block_message']        = wp_kses_post( $input['block_message'] );
-		$sanitized['redirect_url']         = esc_url_raw( $input['redirect_url'] );
-		$sanitized['block_page_id']        = absint( $input['block_page_id'] );
+		$sanitized['blocking_mode']        = isset( $input['blocking_mode'] ) && in_array( $input['blocking_mode'], array( 'whitelist', 'blacklist' ), true ) ? $input['blocking_mode'] : 'blacklist';
+		$sanitized['block_action']         = isset( $input['block_action'] ) && in_array( $input['block_action'], array( 'message', 'redirect', 'page', '403' ), true ) ? $input['block_action'] : 'message';
+		$sanitized['block_message']        = isset( $input['block_message'] ) ? wp_kses_post( $input['block_message'] ) : '';
+		$sanitized['redirect_url']         = isset( $input['redirect_url'] ) ? esc_url_raw( $input['redirect_url'] ) : '';
+		$sanitized['block_page_id']        = isset( $input['block_page_id'] ) ? absint( $input['block_page_id'] ) : 0;
 		$sanitized['exempt_administrators'] = ! empty( $input['exempt_administrators'] );
 		$sanitized['exempt_logged_in']     = ! empty( $input['exempt_logged_in'] );
-		$sanitized['woocommerce_mode']     = in_array( $input['woocommerce_mode'], array( 'all', 'woo_only', 'checkout_only', 'none' ), true ) ? $input['woocommerce_mode'] : 'all';
+		$sanitized['woocommerce_mode']     = isset( $input['woocommerce_mode'] ) && in_array( $input['woocommerce_mode'], array( 'all', 'woo_only', 'checkout_only', 'none' ), true ) ? $input['woocommerce_mode'] : 'all';
 
 		// API Configuration.
-		$sanitized['geolocation_provider'] = in_array( $input['geolocation_provider'], array( 'maxmind', 'ip2location', 'ip-api' ), true ) ? $input['geolocation_provider'] : 'ip-api';
-		$sanitized['maxmind_license_key']  = sanitize_text_field( $input['maxmind_license_key'] );
-		$sanitized['ip2location_api_key']  = sanitize_text_field( $input['ip2location_api_key'] );
+		$sanitized['geolocation_provider'] = isset( $input['geolocation_provider'] ) && in_array( $input['geolocation_provider'], array( 'maxmind', 'ip2location', 'ip-api' ), true ) ? $input['geolocation_provider'] : 'ip-api';
+		$sanitized['maxmind_license_key']  = isset( $input['maxmind_license_key'] ) ? sanitize_text_field( $input['maxmind_license_key'] ) : '';
+		$sanitized['ip2location_api_key']  = isset( $input['ip2location_api_key'] ) ? sanitize_text_field( $input['ip2location_api_key'] ) : '';
 		$sanitized['enable_local_database'] = ! empty( $input['enable_local_database'] );
 		$sanitized['auto_update_database'] = ! empty( $input['auto_update_database'] );
 		$sanitized['last_db_update']       = isset( $input['last_db_update'] ) ? sanitize_text_field( $input['last_db_update'] ) : '';
 
 		// Country Blocking.
-		$sanitized['blocked_countries']    = is_array( $input['blocked_countries'] ) ? array_map( 'sanitize_text_field', $input['blocked_countries'] ) : array();
-		$sanitized['allowed_countries']    = is_array( $input['allowed_countries'] ) ? array_map( 'sanitize_text_field', $input['allowed_countries'] ) : array();
-		$sanitized['blocked_regions']      = is_array( $input['blocked_regions'] ) ? array_map( 'sanitize_text_field', $input['blocked_regions'] ) : array();
+		$sanitized['blocked_countries']    = isset( $input['blocked_countries'] ) && is_array( $input['blocked_countries'] ) ? array_map( 'sanitize_text_field', $input['blocked_countries'] ) : array();
+		$sanitized['allowed_countries']    = isset( $input['allowed_countries'] ) && is_array( $input['allowed_countries'] ) ? array_map( 'sanitize_text_field', $input['allowed_countries'] ) : array();
+		$sanitized['blocked_regions']      = isset( $input['blocked_regions'] ) && is_array( $input['blocked_regions'] ) ? array_map( 'sanitize_text_field', $input['blocked_regions'] ) : array();
 
 		// IP Blocking - IPs are managed separately via IP Manager class.
 
@@ -194,29 +194,29 @@ class Geo_IP_Blocker_Settings_Page {
 
 		// WooCommerce Integration.
 		$sanitized['woo_enable_blocking']      = ! empty( $input['woo_enable_blocking'] );
-		$sanitized['woo_blocking_level']       = in_array( $input['woo_blocking_level'], array( 'entire_site', 'shop_only', 'cart_checkout', 'checkout_only' ), true ) ? $input['woo_blocking_level'] : 'entire_site';
+		$sanitized['woo_blocking_level']       = isset( $input['woo_blocking_level'] ) && in_array( $input['woo_blocking_level'], array( 'entire_site', 'shop_only', 'cart_checkout', 'checkout_only' ), true ) ? $input['woo_blocking_level'] : 'entire_site';
 		$sanitized['woo_block_shop']           = ! empty( $input['woo_block_shop'] );
 		$sanitized['woo_block_cart']           = ! empty( $input['woo_block_cart'] );
 		$sanitized['woo_block_checkout']       = ! empty( $input['woo_block_checkout'] );
 		$sanitized['woo_block_account']        = ! empty( $input['woo_block_account'] );
 		$sanitized['woo_enable_product_blocking'] = ! empty( $input['woo_enable_product_blocking'] );
 		$sanitized['woo_enable_category_blocking'] = ! empty( $input['woo_enable_category_blocking'] );
-		$sanitized['woo_blocked_product_message'] = wp_kses_post( $input['woo_blocked_product_message'] );
+		$sanitized['woo_blocked_product_message'] = isset( $input['woo_blocked_product_message'] ) ? wp_kses_post( $input['woo_blocked_product_message'] ) : '';
 		$sanitized['woo_hide_price']           = ! empty( $input['woo_hide_price'] );
 		$sanitized['woo_hide_add_to_cart']     = ! empty( $input['woo_hide_add_to_cart'] );
 
 		// Logging.
 		$sanitized['enable_logging']       = ! empty( $input['enable_logging'] );
-		$sanitized['max_logs']             = absint( $input['max_logs'] );
-		$sanitized['log_retention_days']   = absint( $input['log_retention_days'] );
+		$sanitized['max_logs']             = isset( $input['max_logs'] ) ? absint( $input['max_logs'] ) : 10000;
+		$sanitized['log_retention_days']   = isset( $input['log_retention_days'] ) ? absint( $input['log_retention_days'] ) : 90;
 
 		// Tools.
 		$sanitized['debug_mode']           = ! empty( $input['debug_mode'] );
 
 		// Frontend Template Settings.
-		$sanitized['block_template_style'] = in_array( $input['block_template_style'], array( 'default', 'minimal', 'dark', 'custom' ), true ) ? $input['block_template_style'] : 'default';
+		$sanitized['block_template_style'] = isset( $input['block_template_style'] ) && in_array( $input['block_template_style'], array( 'default', 'minimal', 'dark', 'custom' ), true ) ? $input['block_template_style'] : 'default';
 		$sanitized['show_block_details']   = ! empty( $input['show_block_details'] );
-		$sanitized['contact_url']          = esc_url_raw( $input['contact_url'] );
+		$sanitized['contact_url']          = isset( $input['contact_url'] ) ? esc_url_raw( $input['contact_url'] ) : '';
 		$sanitized['use_theme_styles']     = ! empty( $input['use_theme_styles'] );
 		$sanitized['show_powered_by']      = ! empty( $input['show_powered_by'] );
 
@@ -831,9 +831,17 @@ class Geo_IP_Blocker_Settings_Page {
 			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
 		}
 
-		// Get and sanitize settings.
-		$settings = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-		$sanitized = $this->sanitize_settings( $settings );
+		// Get existing settings.
+		$existing_settings = $this->get_settings();
+
+		// Get new settings from POST.
+		$new_settings = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		// Merge new settings with existing ones to preserve values from other tabs.
+		$merged_settings = array_merge( $existing_settings, $new_settings );
+
+		// Sanitize merged settings.
+		$sanitized = $this->sanitize_settings( $merged_settings );
 
 		// Save settings.
 		update_option( $this->option_name, $sanitized );
