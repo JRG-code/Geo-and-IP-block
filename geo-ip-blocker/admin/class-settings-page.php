@@ -78,6 +78,19 @@ class Geo_IP_Blocker_Settings_Page {
 			'allow_login_page'     => true,
 			'allow_admin_area'     => true,
 
+			// WooCommerce Integration.
+			'woo_enable_blocking'      => false,
+			'woo_blocking_level'       => 'entire_site', // 'entire_site', 'shop_only', 'cart_checkout', 'checkout_only'.
+			'woo_block_shop'           => true,
+			'woo_block_cart'           => true,
+			'woo_block_checkout'       => true,
+			'woo_block_account'        => false,
+			'woo_enable_product_blocking' => false,
+			'woo_enable_category_blocking' => false,
+			'woo_blocked_product_message' => __( 'This product is not available in your region.', 'geo-ip-blocker' ),
+			'woo_hide_price'           => false,
+			'woo_hide_add_to_cart'     => true,
+
 			// Logging.
 			'enable_logging'       => true,
 			'max_logs'             => 10000,
@@ -162,6 +175,19 @@ class Geo_IP_Blocker_Settings_Page {
 		$sanitized['exempt_pages']         = isset( $input['exempt_pages'] ) && is_array( $input['exempt_pages'] ) ? array_map( 'absint', $input['exempt_pages'] ) : array();
 		$sanitized['allow_login_page']     = ! empty( $input['allow_login_page'] );
 		$sanitized['allow_admin_area']     = ! empty( $input['allow_admin_area'] );
+
+		// WooCommerce Integration.
+		$sanitized['woo_enable_blocking']      = ! empty( $input['woo_enable_blocking'] );
+		$sanitized['woo_blocking_level']       = in_array( $input['woo_blocking_level'], array( 'entire_site', 'shop_only', 'cart_checkout', 'checkout_only' ), true ) ? $input['woo_blocking_level'] : 'entire_site';
+		$sanitized['woo_block_shop']           = ! empty( $input['woo_block_shop'] );
+		$sanitized['woo_block_cart']           = ! empty( $input['woo_block_cart'] );
+		$sanitized['woo_block_checkout']       = ! empty( $input['woo_block_checkout'] );
+		$sanitized['woo_block_account']        = ! empty( $input['woo_block_account'] );
+		$sanitized['woo_enable_product_blocking'] = ! empty( $input['woo_enable_product_blocking'] );
+		$sanitized['woo_enable_category_blocking'] = ! empty( $input['woo_enable_category_blocking'] );
+		$sanitized['woo_blocked_product_message'] = wp_kses_post( $input['woo_blocked_product_message'] );
+		$sanitized['woo_hide_price']           = ! empty( $input['woo_hide_price'] );
+		$sanitized['woo_hide_add_to_cart']     = ! empty( $input['woo_hide_add_to_cart'] );
 
 		// Logging.
 		$sanitized['enable_logging']       = ! empty( $input['enable_logging'] );
@@ -263,7 +289,7 @@ class Geo_IP_Blocker_Settings_Page {
 	public function render() {
 		$settings     = $this->get_settings();
 		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
-		$allowed_tabs = array( 'general', 'api', 'countries', 'ip_blocking', 'exceptions', 'logging' );
+		$allowed_tabs = array( 'general', 'api', 'countries', 'ip_blocking', 'exceptions', 'woocommerce', 'logging' );
 
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'general';
@@ -289,6 +315,11 @@ class Geo_IP_Blocker_Settings_Page {
 				<a href="?page=geo-ip-blocker-settings&tab=exceptions" class="nav-tab <?php echo 'exceptions' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Exceptions', 'geo-ip-blocker' ); ?>
 				</a>
+				<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+				<a href="?page=geo-ip-blocker-settings&tab=woocommerce" class="nav-tab <?php echo 'woocommerce' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'WooCommerce', 'geo-ip-blocker' ); ?>
+				</a>
+				<?php endif; ?>
 				<a href="?page=geo-ip-blocker-settings&tab=logging" class="nav-tab <?php echo 'logging' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Logging', 'geo-ip-blocker' ); ?>
 				</a>
@@ -314,6 +345,9 @@ class Geo_IP_Blocker_Settings_Page {
 							break;
 						case 'exceptions':
 							$this->render_exceptions_tab( $settings );
+							break;
+						case 'woocommerce':
+							$this->render_woocommerce_tab( $settings );
 							break;
 						case 'logging':
 							$this->render_logging_tab( $settings );
@@ -1074,6 +1108,165 @@ class Geo_IP_Blocker_Settings_Page {
 							<?php esc_html_e( 'Always allow access to admin area (wp-admin)', 'geo-ip-blocker' ); ?>
 						</label>
 						<p class="description"><?php esc_html_e( 'Configure special access rules for critical WordPress areas.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render WooCommerce tab.
+	 *
+	 * @param array $settings Current settings.
+	 */
+	private function render_woocommerce_tab( $settings ) {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			?>
+			<div class="notice notice-warning">
+				<p><?php esc_html_e( 'WooCommerce plugin is not installed or activated.', 'geo-ip-blocker' ); ?></p>
+			</div>
+			<?php
+			return;
+		}
+		?>
+		<div class="geo-ip-blocker-woocommerce-section">
+			<table class="form-table">
+				<!-- Enable WooCommerce Blocking -->
+				<tr>
+					<th scope="row">
+						<label for="woo_enable_blocking"><?php esc_html_e( 'Enable WooCommerce Blocking', 'geo-ip-blocker' ); ?></label>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="settings[woo_enable_blocking]" id="woo_enable_blocking" value="1" <?php checked( $settings['woo_enable_blocking'], true ); ?>>
+							<?php esc_html_e( 'Activate geo-blocking for WooCommerce', 'geo-ip-blocker' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Enable this option to apply geo-blocking specifically to WooCommerce pages and products.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Blocking Level -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Blocking Level', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Select blocking level', 'geo-ip-blocker' ); ?></legend>
+							<label>
+								<input type="radio" name="settings[woo_blocking_level]" value="entire_site" <?php checked( $settings['woo_blocking_level'], 'entire_site' ); ?>>
+								<?php esc_html_e( 'Block entire site', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="radio" name="settings[woo_blocking_level]" value="shop_only" <?php checked( $settings['woo_blocking_level'], 'shop_only' ); ?>>
+								<?php esc_html_e( 'Block only shop pages', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="radio" name="settings[woo_blocking_level]" value="cart_checkout" <?php checked( $settings['woo_blocking_level'], 'cart_checkout' ); ?>>
+								<?php esc_html_e( 'Block cart and checkout only', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="radio" name="settings[woo_blocking_level]" value="checkout_only" <?php checked( $settings['woo_blocking_level'], 'checkout_only' ); ?>>
+								<?php esc_html_e( 'Allow browsing, block checkout only', 'geo-ip-blocker' ); ?>
+							</label>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Choose how restrictive the geo-blocking should be for WooCommerce.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Specific Pages -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Specific Pages', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Select pages to block', 'geo-ip-blocker' ); ?></legend>
+							<label>
+								<input type="checkbox" name="settings[woo_block_shop]" value="1" <?php checked( $settings['woo_block_shop'], true ); ?>>
+								<?php esc_html_e( 'Shop page', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="checkbox" name="settings[woo_block_cart]" value="1" <?php checked( $settings['woo_block_cart'], true ); ?>>
+								<?php esc_html_e( 'Cart page', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="checkbox" name="settings[woo_block_checkout]" value="1" <?php checked( $settings['woo_block_checkout'], true ); ?>>
+								<?php esc_html_e( 'Checkout page', 'geo-ip-blocker' ); ?>
+							</label>
+							<br>
+							<label>
+								<input type="checkbox" name="settings[woo_block_account]" value="1" <?php checked( $settings['woo_block_account'], true ); ?>>
+								<?php esc_html_e( 'My Account page', 'geo-ip-blocker' ); ?>
+							</label>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Select which WooCommerce pages should be blocked based on geo-location.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Product and Category Blocking -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Product & Category Blocking', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="settings[woo_enable_product_blocking]" value="1" <?php checked( $settings['woo_enable_product_blocking'], true ); ?>>
+							<?php esc_html_e( 'Enable per-product geo-blocking', 'geo-ip-blocker' ); ?>
+						</label>
+						<br>
+						<label>
+							<input type="checkbox" name="settings[woo_enable_category_blocking]" value="1" <?php checked( $settings['woo_enable_category_blocking'], true ); ?>>
+							<?php esc_html_e( 'Enable per-category geo-blocking', 'geo-ip-blocker' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Allow individual products and categories to have their own geo-blocking rules.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Blocked Product Message -->
+				<tr>
+					<th scope="row">
+						<label for="woo_blocked_product_message"><?php esc_html_e( 'Blocked Product Message', 'geo-ip-blocker' ); ?></label>
+					</th>
+					<td>
+						<?php
+						wp_editor(
+							$settings['woo_blocked_product_message'],
+							'woo_blocked_product_message',
+							array(
+								'textarea_name' => 'settings[woo_blocked_product_message]',
+								'textarea_rows' => 5,
+								'media_buttons' => false,
+								'teeny'         => true,
+							)
+						);
+						?>
+						<p class="description"><?php esc_html_e( 'Message displayed when a product is not available in the user\'s region.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Product Display Options -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Product Display Options', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="settings[woo_hide_price]" value="1" <?php checked( $settings['woo_hide_price'], true ); ?>>
+							<?php esc_html_e( 'Hide price for blocked products', 'geo-ip-blocker' ); ?>
+						</label>
+						<br>
+						<label>
+							<input type="checkbox" name="settings[woo_hide_add_to_cart]" value="1" <?php checked( $settings['woo_hide_add_to_cart'], true ); ?>>
+							<?php esc_html_e( 'Hide "Add to Cart" button for blocked products', 'geo-ip-blocker' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Control what information is shown for products that are geo-blocked.', 'geo-ip-blocker' ); ?></p>
 					</td>
 				</tr>
 			</table>

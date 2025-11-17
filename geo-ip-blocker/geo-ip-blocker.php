@@ -130,6 +130,11 @@ final class Geo_IP_Blocker {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geo-blocker.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-blocker.php';
 
+		// WooCommerce integration.
+		if ( class_exists( 'WooCommerce' ) ) {
+			require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-woocommerce.php';
+		}
+
 		if ( is_admin() ) {
 			require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'admin/class-admin.php';
 		}
@@ -146,6 +151,11 @@ final class Geo_IP_Blocker {
 		} else {
 			// Initialize blocker for frontend only.
 			geo_ip_blocker_get_blocker();
+		}
+
+		// Initialize WooCommerce integration.
+		if ( class_exists( 'WooCommerce' ) ) {
+			new Geo_IP_Blocker_WooCommerce();
 		}
 	}
 
