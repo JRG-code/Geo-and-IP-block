@@ -1170,7 +1170,7 @@
 
 			try {
 				document.execCommand('copy');
-				alert('Informações do sistema copiadas para a área de transferência!');
+				alert('System information copied to clipboard!');
 			} catch (err) {
 				alert('Error copying to clipboard');
 			}

@@ -96,6 +96,9 @@ class Geo_IP_Blocker_Settings_Page {
 			'max_logs'             => 10000,
 			'log_retention_days'   => 90,
 
+			// Tools & Debug.
+			'debug_mode'           => false,
+
 			// Frontend Template Settings.
 			'block_template_style' => 'default', // 'default', 'minimal', 'dark', 'custom'.
 			'show_block_details'   => false,
