@@ -1,0 +1,476 @@
+/**
+ * Geo & IP Blocker - Frontend Styles
+ * Blocked Message Templates
+ *
+ * @package GeoIPBlocker
+ * @version 1.0.0
+ */
+
+/* ==========================================================================
+   Reset & Base Styles
+   ========================================================================== */
+
+.geo-blocker-blocked {
+	margin: 0;
+	padding: 0;
+	font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.geo-blocker-blocked * {
+	box-sizing: border-box;
+}
+
+/* ==========================================================================
+   Default Template Style
+   ========================================================================== */
+
+.geo-blocker-template-default {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 20px;
+}
+
+.geo-blocker-template-default .geo-blocker-container {
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.geo-blocker-template-default .geo-blocker-content {
+	background: #ffffff;
+	padding: 50px 40px;
+	border-radius: 12px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+	text-align: center;
+	animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+	from {
+		opacity: 0;
+		transform: translateY(30px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.geo-blocker-template-default .geo-blocker-icon {
+	width: 80px;
+	height: 80px;
+	margin: 0 auto 30px;
+	color: #ef4444;
+	animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.8;
+		transform: scale(1.05);
+	}
+}
+
+.geo-blocker-template-default .geo-blocker-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.geo-blocker-template-default .geo-blocker-title {
+	font-size: 32px;
+	font-weight: 700;
+	color: #1f2937;
+	margin: 0 0 20px;
+	line-height: 1.2;
+}
+
+.geo-blocker-template-default .geo-blocker-message {
+	font-size: 16px;
+	color: #6b7280;
+	line-height: 1.6;
+	margin: 0 0 30px;
+}
+
+.geo-blocker-template-default .geo-blocker-info {
+	background: #f3f4f6;
+	padding: 20px;
+	border-radius: 8px;
+	margin: 20px 0;
+	text-align: left;
+}
+
+.geo-blocker-template-default .geo-blocker-reason {
+	border-left: 4px solid #ef4444;
+}
+
+.geo-blocker-template-default .geo-blocker-info strong {
+	display: block;
+	color: #374151;
+	font-weight: 600;
+	margin-bottom: 8px;
+	font-size: 14px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.geo-blocker-template-default .geo-blocker-info span,
+.geo-blocker-template-default .geo-blocker-info code {
+	color: #6b7280;
+	font-size: 15px;
+}
+
+.geo-blocker-template-default .geo-blocker-info code {
+	background: #ffffff;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-family: 'Courier New', monospace;
+	border: 1px solid #e5e7eb;
+}
+
+.geo-blocker-template-default .geo-blocker-detail-item {
+	margin-bottom: 12px;
+}
+
+.geo-blocker-template-default .geo-blocker-detail-item:last-child {
+	margin-bottom: 0;
+}
+
+.geo-blocker-template-default .geo-blocker-actions {
+	margin-top: 30px;
+}
+
+.geo-blocker-template-default .geo-blocker-button {
+	display: inline-block;
+	padding: 14px 32px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	color: #ffffff;
+	text-decoration: none;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 16px;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.geo-blocker-template-default .geo-blocker-button:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.geo-blocker-template-default .geo-blocker-footer {
+	text-align: center;
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.geo-blocker-template-default .geo-blocker-footer p {
+	color: #ffffff;
+	font-size: 14px;
+	margin: 0;
+}
+
+.geo-blocker-template-default .geo-blocker-footer a {
+	color: #ffffff;
+	text-decoration: underline;
+}
+
+/* ==========================================================================
+   Minimal Template Style
+   ========================================================================== */
+
+.geo-blocker-template-minimal {
+	background: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 20px;
+}
+
+.geo-blocker-template-minimal .geo-blocker-container {
+	width: 100%;
+	max-width: 500px;
+	margin: 0 auto;
+}
+
+.geo-blocker-template-minimal .geo-blocker-content {
+	padding: 40px;
+	text-align: center;
+	border: 2px solid #e5e7eb;
+	border-radius: 8px;
+}
+
+.geo-blocker-template-minimal .geo-blocker-minimal h1 {
+	font-size: 28px;
+	font-weight: 600;
+	color: #1f2937;
+	margin: 0 0 16px;
+}
+
+.geo-blocker-template-minimal .geo-blocker-minimal p {
+	font-size: 16px;
+	color: #6b7280;
+	line-height: 1.6;
+	margin: 0 0 24px;
+}
+
+.geo-blocker-template-minimal .geo-blocker-minimal a {
+	display: inline-block;
+	padding: 10px 24px;
+	background: #1f2937;
+	color: #ffffff;
+	text-decoration: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	transition: background 0.3s ease;
+}
+
+.geo-blocker-template-minimal .geo-blocker-minimal a:hover {
+	background: #374151;
+}
+
+/* ==========================================================================
+   Dark Template Style
+   ========================================================================== */
+
+.geo-blocker-template-dark {
+	background: #0f172a;
+	color: #e2e8f0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	padding: 20px;
+}
+
+.geo-blocker-template-dark .geo-blocker-container {
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
+}
+
+.geo-blocker-template-dark .geo-blocker-content {
+	background: #1e293b;
+	padding: 50px 40px;
+	border-radius: 12px;
+	box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+	text-align: center;
+	border: 1px solid #334155;
+}
+
+.geo-blocker-template-dark .geo-blocker-icon {
+	width: 80px;
+	height: 80px;
+	margin: 0 auto 30px;
+	color: #fbbf24;
+}
+
+.geo-blocker-template-dark .geo-blocker-icon svg {
+	width: 100%;
+	height: 100%;
+}
+
+.geo-blocker-template-dark .geo-blocker-title {
+	font-size: 32px;
+	font-weight: 700;
+	color: #f1f5f9;
+	margin: 0 0 20px;
+}
+
+.geo-blocker-template-dark .geo-blocker-message {
+	font-size: 16px;
+	color: #cbd5e1;
+	line-height: 1.6;
+	margin: 0 0 30px;
+}
+
+.geo-blocker-template-dark .geo-blocker-details-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+	margin: 30px 0;
+}
+
+.geo-blocker-template-dark .detail-card {
+	background: #334155;
+	padding: 20px;
+	border-radius: 8px;
+	border: 1px solid #475569;
+	text-align: left;
+}
+
+.geo-blocker-template-dark .detail-label {
+	font-size: 12px;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 8px;
+	font-weight: 600;
+}
+
+.geo-blocker-template-dark .detail-value {
+	font-size: 16px;
+	color: #e2e8f0;
+	font-weight: 500;
+}
+
+.geo-blocker-template-dark .detail-value code {
+	background: #1e293b;
+	padding: 4px 8px;
+	border-radius: 4px;
+	font-family: 'Courier New', monospace;
+	color: #fbbf24;
+	border: 1px solid #475569;
+}
+
+.geo-blocker-template-dark .geo-blocker-button-dark {
+	display: inline-block;
+	padding: 14px 32px;
+	background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+	color: #1f2937;
+	text-decoration: none;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 16px;
+	transition: all 0.3s ease;
+	box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+.geo-blocker-template-dark .geo-blocker-button-dark:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+}
+
+.geo-blocker-template-dark .geo-blocker-footer {
+	text-align: center;
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid #334155;
+}
+
+.geo-blocker-template-dark .geo-blocker-footer p {
+	color: #94a3b8;
+	font-size: 14px;
+	margin: 0;
+}
+
+.geo-blocker-template-dark .geo-blocker-footer a {
+	color: #fbbf24;
+	text-decoration: none;
+}
+
+/* ==========================================================================
+   Responsive Design
+   ========================================================================== */
+
+@media (max-width: 768px) {
+	.geo-blocker-template-default .geo-blocker-content,
+	.geo-blocker-template-dark .geo-blocker-content {
+		padding: 40px 24px;
+	}
+
+	.geo-blocker-template-default .geo-blocker-title,
+	.geo-blocker-template-dark .geo-blocker-title {
+		font-size: 24px;
+	}
+
+	.geo-blocker-template-default .geo-blocker-icon,
+	.geo-blocker-template-dark .geo-blocker-icon {
+		width: 60px;
+		height: 60px;
+		margin-bottom: 20px;
+	}
+
+	.geo-blocker-template-default .geo-blocker-button,
+	.geo-blocker-template-dark .geo-blocker-button-dark {
+		padding: 12px 24px;
+		font-size: 14px;
+	}
+
+	.geo-blocker-template-minimal .geo-blocker-content {
+		padding: 30px 20px;
+	}
+
+	.geo-blocker-template-minimal .geo-blocker-minimal h1 {
+		font-size: 22px;
+	}
+}
+
+@media (max-width: 480px) {
+	.geo-blocker-template-default .geo-blocker-content,
+	.geo-blocker-template-dark .geo-blocker-content {
+		padding: 30px 20px;
+		border-radius: 8px;
+	}
+
+	.geo-blocker-template-default .geo-blocker-title,
+	.geo-blocker-template-dark .geo-blocker-title {
+		font-size: 20px;
+	}
+
+	.geo-blocker-template-default .geo-blocker-message,
+	.geo-blocker-template-dark .geo-blocker-message {
+		font-size: 14px;
+	}
+
+	.geo-blocker-template-dark .geo-blocker-details-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* ==========================================================================
+   Print Styles
+   ========================================================================== */
+
+@media print {
+	.geo-blocker-blocked {
+		background: #ffffff !important;
+	}
+
+	.geo-blocker-content {
+		box-shadow: none !important;
+		border: 1px solid #000000 !important;
+	}
+
+	.geo-blocker-button,
+	.geo-blocker-button-dark {
+		display: none !important;
+	}
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.geo-blocker-blocked :focus {
+	outline: 2px solid #667eea;
+	outline-offset: 2px;
+}
+
+.geo-blocker-template-dark :focus {
+	outline-color: #fbbf24;
+}
+
+/* Screen reader only */
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border-width: 0;
+}

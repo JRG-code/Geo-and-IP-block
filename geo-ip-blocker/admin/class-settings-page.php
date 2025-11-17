@@ -95,6 +95,13 @@ class Geo_IP_Blocker_Settings_Page {
 			'enable_logging'       => true,
 			'max_logs'             => 10000,
 			'log_retention_days'   => 90,
+
+			// Frontend Template Settings.
+			'block_template_style' => 'default', // 'default', 'minimal', 'dark', 'custom'.
+			'show_block_details'   => false,
+			'contact_url'          => '',
+			'use_theme_styles'     => false,
+			'show_powered_by'      => false,
 		);
 	}
 
@@ -205,6 +212,13 @@ class Geo_IP_Blocker_Settings_Page {
 
 		// Tools.
 		$sanitized['debug_mode']           = ! empty( $input['debug_mode'] );
+
+		// Frontend Template Settings.
+		$sanitized['block_template_style'] = in_array( $input['block_template_style'], array( 'default', 'minimal', 'dark', 'custom' ), true ) ? $input['block_template_style'] : 'default';
+		$sanitized['show_block_details']   = ! empty( $input['show_block_details'] );
+		$sanitized['contact_url']          = esc_url_raw( $input['contact_url'] );
+		$sanitized['use_theme_styles']     = ! empty( $input['use_theme_styles'] );
+		$sanitized['show_powered_by']      = ! empty( $input['show_powered_by'] );
 
 		return $sanitized;
 	}

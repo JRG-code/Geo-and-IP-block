@@ -129,6 +129,7 @@ final class Geo_IP_Blocker {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-logger.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geo-blocker.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-blocker.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-blocked-page.php';
 
 		// WooCommerce integration.
 		if ( class_exists( 'WooCommerce' ) ) {
