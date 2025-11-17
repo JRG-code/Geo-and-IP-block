@@ -537,12 +537,8 @@ class Geo_Blocker_Blocker {
 	 * @param string $reason        Block reason.
 	 */
 	private function log_blocked_access( $ip_address, $location_data, $reason ) {
-		// Check if logging is enabled.
-		if ( ! geo_ip_blocker_get_setting( 'enable_logging', true ) ) {
-			return;
-		}
-
-		$this->database->add_log(
+		// Use logger class for logging.
+		geo_ip_blocker_log_access(
 			array(
 				'ip_address'   => $ip_address,
 				'country_code' => isset( $location_data['country_code'] ) ? $location_data['country_code'] : '',
@@ -561,19 +557,7 @@ class Geo_Blocker_Blocker {
 	 * @return array
 	 */
 	public function get_statistics() {
-		$stats = array(
-			'total_blocks'       => $this->database->get_logs_count(),
-			'blocks_today'       => 0,
-			'blocks_this_week'   => 0,
-			'blocks_this_month'  => 0,
-			'top_countries'      => array(),
-			'top_ips'            => array(),
-		);
-
-		// Get blocks today.
-		$today_start = gmdate( 'Y-m-d 00:00:00' );
-		// This would need a custom query in database class.
-
-		return $stats;
+		// Use logger class for statistics.
+		return geo_ip_blocker_get_log_stats( 'all' );
 	}
 }

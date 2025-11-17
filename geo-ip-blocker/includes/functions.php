@@ -605,3 +605,143 @@ function geo_ip_blocker_get_woo_blocking_modes() {
 		'none'          => __( 'Do not block WooCommerce', 'geo-ip-blocker' ),
 	);
 }
+
+/**
+ * Get Logger instance.
+ *
+ * @return Geo_Blocker_Logger
+ */
+function geo_ip_blocker_get_logger() {
+	static $logger = null;
+
+	if ( null === $logger ) {
+		$logger = new Geo_Blocker_Logger();
+	}
+
+	return $logger;
+}
+
+/**
+ * Log a blocked access attempt.
+ *
+ * @param array $data Log data.
+ * @return int|false Log ID or false.
+ */
+function geo_ip_blocker_log_access( $data ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->log_blocked_access( $data );
+}
+
+/**
+ * Get logs with filters and pagination.
+ *
+ * @param array $filters Filters.
+ * @param int   $page    Page number.
+ * @param int   $per_page Items per page.
+ * @return array
+ */
+function geo_ip_blocker_get_logs( $filters = array(), $page = 1, $per_page = 20 ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_logs( $filters, $page, $per_page );
+}
+
+/**
+ * Export logs.
+ *
+ * @param string $format  Format ('csv' or 'json').
+ * @param array  $filters Filters.
+ * @return string|false File path or false.
+ */
+function geo_ip_blocker_export_logs( $format = 'csv', $filters = array() ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->export_logs( $format, $filters );
+}
+
+/**
+ * Delete logs older than specified days.
+ *
+ * @param int $days Number of days.
+ * @return int|false Number of deleted rows or false.
+ */
+function geo_ip_blocker_delete_old_logs( $days = null ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->delete_logs( $days );
+}
+
+/**
+ * Clear all logs.
+ *
+ * @return int|false Number of deleted rows or false.
+ */
+function geo_ip_blocker_clear_logs() {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->clear_all_logs();
+}
+
+/**
+ * Get log statistics.
+ *
+ * @param string $period Period ('today', 'week', 'month', 'year', 'all').
+ * @return array
+ */
+function geo_ip_blocker_get_log_stats( $period = 'all' ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_statistics( $period );
+}
+
+/**
+ * Get recent logs.
+ *
+ * @param int $limit Limit.
+ * @return array
+ */
+function geo_ip_blocker_get_recent_logs( $limit = 100 ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_recent_logs( $limit );
+}
+
+/**
+ * Get logs by IP.
+ *
+ * @param string $ip_address IP address.
+ * @param int    $limit      Limit.
+ * @return array
+ */
+function geo_ip_blocker_get_ip_logs( $ip_address, $limit = 100 ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_logs_by_ip( $ip_address, $limit );
+}
+
+/**
+ * Get logs by country.
+ *
+ * @param string $country_code Country code.
+ * @param int    $limit        Limit.
+ * @return array
+ */
+function geo_ip_blocker_get_country_logs( $country_code, $limit = 100 ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_logs_by_country( $country_code, $limit );
+}
+
+/**
+ * Get chart data for blocks.
+ *
+ * @param int    $days   Number of days.
+ * @param string $period Period.
+ * @return array
+ */
+function geo_ip_blocker_get_chart_data( $days = 30, $period = 'month' ) {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_chart_data( $days, $period );
+}
+
+/**
+ * Get summary statistics.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_summary_stats() {
+	$logger = geo_ip_blocker_get_logger();
+	return $logger->get_summary();
+}
