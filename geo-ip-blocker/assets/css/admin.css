@@ -4,6 +4,7 @@
  * @package GeoIPBlocker
  */
 
+/* General Layout */
 .geo-ip-blocker-dashboard,
 .geo-ip-blocker-rules,
 .geo-ip-blocker-logs,
@@ -20,4 +21,272 @@
 .geo-ip-blocker-logs h2,
 .geo-ip-blocker-settings h2 {
 	margin-top: 0;
+}
+
+/* Settings Page */
+.geo-ip-blocker-settings {
+	max-width: 100%;
+}
+
+.geo-ip-blocker-settings h1 {
+	margin-bottom: 20px;
+}
+
+.geo-ip-blocker-settings .nav-tab-wrapper {
+	margin-bottom: 0;
+	border-bottom: 1px solid #ccd0d4;
+}
+
+.geo-ip-blocker-settings-content {
+	margin-top: 0;
+	padding: 20px;
+	background: #fff;
+}
+
+/* Form Table Customization */
+.geo-ip-blocker-settings .form-table {
+	margin-top: 0;
+}
+
+.geo-ip-blocker-settings .form-table th {
+	width: 250px;
+	padding: 20px 10px 20px 0;
+	vertical-align: top;
+}
+
+.geo-ip-blocker-settings .form-table td {
+	padding: 20px 10px;
+}
+
+.geo-ip-blocker-settings .form-table td p.description {
+	margin-top: 8px;
+	margin-bottom: 0;
+	color: #646970;
+	font-style: italic;
+}
+
+/* Settings Footer */
+.geo-ip-blocker-settings-footer {
+	margin-top: 30px;
+	padding-top: 20px;
+	border-top: 1px solid #dcdcde;
+	position: relative;
+}
+
+.geo-ip-blocker-settings-footer .spinner {
+	float: none;
+	margin: 0 10px 0 0;
+	vertical-align: middle;
+}
+
+.geo-ip-blocker-settings-footer .geo-ip-blocker-message {
+	display: inline-block;
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
+.geo-ip-blocker-settings-footer .geo-ip-blocker-message .success {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.geo-ip-blocker-settings-footer .geo-ip-blocker-message .error {
+	color: #d63638;
+	font-weight: 600;
+}
+
+/* Country Selection */
+.geo-ip-blocker-countries-section {
+	margin-top: 20px;
+}
+
+.geo-ip-blocker-countries-section p.description {
+	margin-bottom: 20px;
+	padding: 12px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	font-size: 13px;
+}
+
+.country-actions {
+	margin-top: 10px;
+}
+
+.country-actions .button {
+	margin-right: 10px;
+}
+
+/* Selected Countries List */
+.selected-countries-list {
+	margin-top: 15px;
+	padding: 15px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+	min-height: 60px;
+}
+
+.selected-countries-list .no-countries {
+	margin: 0;
+	color: #646970;
+	font-style: italic;
+}
+
+.country-tag {
+	display: inline-block;
+	margin: 4px 8px 4px 0;
+	padding: 6px 10px;
+	background: #2271b1;
+	color: #fff;
+	border-radius: 3px;
+	font-size: 13px;
+	line-height: 1.4;
+}
+
+.country-tag .remove-country {
+	margin-left: 8px;
+	padding: 0 4px;
+	background: transparent;
+	border: none;
+	color: #fff;
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+	opacity: 0.8;
+	transition: opacity 0.2s;
+}
+
+.country-tag .remove-country:hover {
+	opacity: 1;
+}
+
+.country-tag .remove-country:focus {
+	outline: 1px dotted #fff;
+	outline-offset: 2px;
+}
+
+/* API Test Results */
+.api-test-result,
+.database-update-result {
+	margin-top: 10px;
+	display: block;
+}
+
+.api-test-result .success,
+.database-update-result .success {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.api-test-result .error,
+.database-update-result .error {
+	color: #d63638;
+	font-weight: 600;
+}
+
+/* Toggle Options */
+.block-action-option,
+.api-provider-option,
+.local-db-option {
+	display: none;
+}
+
+.block-action-option.visible,
+.api-provider-option.visible,
+.local-db-option.visible {
+	display: table-row;
+}
+
+/* Select2 Customization */
+.select2-container--default .select2-selection--multiple {
+	min-height: 40px;
+	padding: 4px;
+	border-color: #8c8f94;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+	background-color: #2271b1;
+	border-color: #135e96;
+	color: #fff;
+	padding: 4px 8px;
+	margin: 4px;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+	color: #fff;
+	margin-right: 6px;
+	opacity: 0.8;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+	opacity: 1;
+	color: #fff;
+}
+
+/* Spinner */
+.spinner {
+	float: none;
+	margin: 0 10px 0 0;
+	vertical-align: middle;
+	display: none;
+}
+
+.spinner.is-active {
+	display: inline-block;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+	.geo-ip-blocker-settings .form-table th,
+	.geo-ip-blocker-settings .form-table td {
+		display: block;
+		width: 100%;
+		padding: 10px 0;
+	}
+
+	.geo-ip-blocker-settings .form-table th {
+		padding-bottom: 0;
+	}
+
+	.country-tag {
+		font-size: 12px;
+		padding: 5px 8px;
+	}
+
+	.country-actions .button {
+		margin-bottom: 10px;
+	}
+}
+
+/* WordPress Editor Customization */
+.geo-ip-blocker-settings .wp-editor-wrap {
+	max-width: 600px;
+}
+
+/* Input Field Widths */
+.geo-ip-blocker-settings input[type="text"],
+.geo-ip-blocker-settings input[type="url"],
+.geo-ip-blocker-settings input[type="password"],
+.geo-ip-blocker-settings select {
+	max-width: 500px;
+}
+
+.geo-ip-blocker-settings input.small-text {
+	max-width: 100px;
+}
+
+/* Checkbox and Radio Labels */
+.geo-ip-blocker-settings label {
+	display: inline-block;
+	margin-bottom: 8px;
+}
+
+.geo-ip-blocker-settings label input[type="checkbox"],
+.geo-ip-blocker-settings label input[type="radio"] {
+	margin-right: 6px;
 }

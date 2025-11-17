@@ -18,10 +18,26 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Geo_IP_Blocker_Admin {
 
 	/**
+	 * Settings page instance.
+	 *
+	 * @var Geo_IP_Blocker_Settings_Page
+	 */
+	private $settings_page;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
+		$this->load_dependencies();
 		$this->init_hooks();
+	}
+
+	/**
+	 * Load required dependencies.
+	 */
+	private function load_dependencies() {
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'admin/class-settings-page.php';
+		$this->settings_page = new Geo_IP_Blocker_Settings_Page();
 	}
 
 	/**
@@ -182,6 +198,6 @@ class Geo_IP_Blocker_Admin {
 			return;
 		}
 
-		include GEO_IP_BLOCKER_PLUGIN_DIR . 'admin/views/settings.php';
+		$this->settings_page->render();
 	}
 }
