@@ -4,7 +4,7 @@ Tags: geolocation, ip-blocker, woocommerce, security, country-blocker, geo-block
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,14 @@ Yes, edit any product and you'll find a "Geo Restrictions" metabox where you can
 
 == Changelog ==
 
+= 1.0.1 - 2025-01-17 =
+* Fixed: Settings persistence issue - settings now properly saved across all tabs
+* Fixed: Settings data structure - JavaScript now sends data in correct format expected by PHP
+* Fixed: Multi-tab form handling - settings from inactive tabs are now preserved when saving
+* Fixed: Checkbox handling - unchecked checkboxes now properly saved instead of reverting
+* Fixed: PHP warnings for missing field indices with proper isset() checks
+* Improved: Settings merge logic to prevent data loss between tabs
+
 = 1.0.0 - 2024-01-15 =
 * Initial release
 * Geographic blocking by country
@@ -161,6 +169,9 @@ Yes, edit any product and you'll find a "Geo Restrictions" metabox where you can
 * Complete documentation
 
 == Upgrade Notice ==
+
+= 1.0.1 =
+Critical bug fix for settings persistence. Update recommended for all users.
 
 = 1.0.0 =
 Initial release of Geo & IP Blocker for WooCommerce.
