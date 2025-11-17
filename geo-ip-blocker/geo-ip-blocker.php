@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Geo & IP Blocker for WooCommerce
  * Plugin URI: https://github.com/JRG-code/Geo-and-IP-block
- * Description: Bloqueie acesso por país, região ou IP
+ * Description: Block access by country, region or IP address
  * Version: 1.0.1
  * Author: JRG Code
  * Author URI: https://github.com/JRG-code

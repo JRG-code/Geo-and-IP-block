@@ -688,7 +688,7 @@
 							$('#my-result-isp').text(data.isp || 'N/A');
 
 							// Determine blocking status (simplified - would need backend logic)
-							const status = data.is_blocked ? '✗ Bloqueado' : '✓ Permitido';
+							const status = data.is_blocked ? '✗ Blocked' : '✓ Allowed';
 							const statusClass = data.is_blocked ? 'error' : 'success';
 							$('#my-result-status').html('<span class="' + statusClass + '">' + status + '</span>');
 
@@ -701,13 +701,13 @@
 
 							$results.slideDown();
 						} else {
-							alert(response.data.message || 'Erro ao detectar localização');
+							alert(response.data.message || 'Error detecting location');
 						}
 					},
 					error: function () {
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
-						alert('Erro ao detectar localização');
+						alert('Error detecting location');
 					}
 				});
 			});
@@ -723,7 +723,7 @@
 				const ip = $input.val().trim();
 
 				if (!ip) {
-					alert('Por favor, digite um endereço IP');
+					alert('Please enter an IP address');
 					return;
 				}
 
@@ -752,7 +752,7 @@
 							$('#other-result-city').text(data.city || 'N/A');
 							$('#other-result-isp').text(data.isp || 'N/A');
 
-							const status = data.is_blocked ? '✗ Bloqueado' : '✓ Permitido';
+							const status = data.is_blocked ? '✗ Blocked' : '✓ Allowed';
 							const statusClass = data.is_blocked ? 'error' : 'success';
 							$('#other-result-status').html('<span class="' + statusClass + '">' + status + '</span>');
 
@@ -765,13 +765,13 @@
 
 							$results.slideDown();
 						} else {
-							alert(response.data.message || 'Erro ao testar IP');
+							alert(response.data.message || 'Error testing IP');
 						}
 					},
 					error: function () {
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
-						alert('Erro ao testar IP');
+						alert('Error testing IP');
 					}
 				});
 			});
@@ -806,7 +806,7 @@
 
 						if (response.success) {
 							$result.removeClass('notice-error').addClass('notice-success');
-							$result.find('p').text(response.data.message || 'Database atualizado com sucesso!');
+							$result.find('p').text(response.data.message || 'Database updated successfully!');
 							$result.slideDown();
 
 							// Reload after 2 seconds
@@ -815,7 +815,7 @@
 							}, 2000);
 						} else {
 							$result.removeClass('notice-success').addClass('notice-error');
-							$result.find('p').text(response.data.message || 'Erro ao atualizar database');
+							$result.find('p').text(response.data.message || 'Error updating database');
 							$result.slideDown();
 						}
 					},
@@ -823,7 +823,7 @@
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
 						$result.removeClass('notice-success').addClass('notice-error');
-						$result.find('p').text('Erro ao atualizar database');
+						$result.find('p').text('Error updating database');
 						$result.slideDown();
 					}
 				});
@@ -854,7 +854,7 @@
 
 						if (response.success) {
 							$result.removeClass('notice-error').addClass('notice-success');
-							$result.find('p').text(response.data.message || 'Cache limpo com sucesso!');
+							$result.find('p').text(response.data.message || 'Cache cleared successfully!');
 							$result.slideDown();
 
 							setTimeout(function () {
@@ -862,7 +862,7 @@
 							}, 3000);
 						} else {
 							$result.removeClass('notice-success').addClass('notice-error');
-							$result.find('p').text(response.data.message || 'Erro ao limpar cache');
+							$result.find('p').text(response.data.message || 'Error clearing cache');
 							$result.slideDown();
 						}
 					},
@@ -870,7 +870,7 @@
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
 						$result.removeClass('notice-success').addClass('notice-error');
-						$result.find('p').text('Erro ao limpar cache');
+						$result.find('p').text('Error clearing cache');
 						$result.slideDown();
 					}
 				});
@@ -907,11 +907,11 @@
 							window.URL.revokeObjectURL(url);
 							document.body.removeChild(a);
 						} else {
-							alert('Erro ao exportar configurações');
+							alert('Error exporting settings');
 						}
 					},
 					error: function () {
-						alert('Erro ao exportar configurações');
+						alert('Error exporting settings');
 					}
 				});
 			});
@@ -927,11 +927,11 @@
 				const file = $fileInput[0].files[0];
 
 				if (!file) {
-					alert('Por favor, selecione um arquivo');
+					alert('Please select a file');
 					return;
 				}
 
-				if (!confirm('Isso sobrescreverá as configurações atuais. Deseja continuar?')) {
+				if (!confirm('This will overwrite current settings. Continue?')) {
 					return;
 				}
 
@@ -957,7 +957,7 @@
 
 							if (response.success) {
 								$result.removeClass('notice-error').addClass('notice-success');
-								$result.find('p').text(response.data.message || 'Configurações importadas com sucesso!');
+								$result.find('p').text(response.data.message || 'Settings imported successfully!');
 								$result.slideDown();
 
 								// Reload after 2 seconds
@@ -966,7 +966,7 @@
 								}, 2000);
 							} else {
 								$result.removeClass('notice-success').addClass('notice-error');
-								$result.find('p').text(response.data.message || 'Erro ao importar configurações');
+								$result.find('p').text(response.data.message || 'Error importing settings');
 								$result.slideDown();
 							}
 						},
@@ -974,7 +974,7 @@
 							$spinner.removeClass('is-active');
 							$button.prop('disabled', false);
 							$result.removeClass('notice-success').addClass('notice-error');
-							$result.find('p').text('Erro ao importar configurações');
+							$result.find('p').text('Error importing settings');
 							$result.slideDown();
 						}
 					});
@@ -987,7 +987,7 @@
 			$('#reset-settings-button').on('click', function (e) {
 				e.preventDefault();
 
-				if (!confirm('Isso resetará todas as configurações para os valores padrão. Esta ação não pode ser desfeita. Deseja continuar?')) {
+				if (!confirm('This will reset all settings to default values. This action cannot be undone. Continue?')) {
 					return;
 				}
 
@@ -1012,7 +1012,7 @@
 
 						if (response.success) {
 							$result.removeClass('notice-error').addClass('notice-success');
-							$result.find('p').text(response.data.message || 'Configurações resetadas com sucesso!');
+							$result.find('p').text(response.data.message || 'Settings reset successfully!');
 							$result.slideDown();
 
 							// Reload after 2 seconds
@@ -1021,7 +1021,7 @@
 							}, 2000);
 						} else {
 							$result.removeClass('notice-success').addClass('notice-error');
-							$result.find('p').text(response.data.message || 'Erro ao resetar configurações');
+							$result.find('p').text(response.data.message || 'Error resetting settings');
 							$result.slideDown();
 						}
 					},
@@ -1029,7 +1029,7 @@
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
 						$result.removeClass('notice-success').addClass('notice-error');
-						$result.find('p').text('Erro ao resetar configurações');
+						$result.find('p').text('Error resetting settings');
 						$result.slideDown();
 					}
 				});
@@ -1056,7 +1056,7 @@
 				// Copy to clipboard
 				if (navigator.clipboard && navigator.clipboard.writeText) {
 					navigator.clipboard.writeText(text).then(function () {
-						alert('Informações do sistema copiadas para a área de transferência!');
+						alert('System information copied to clipboard!');
 					}).catch(function () {
 						ToolsTab.fallbackCopyToClipboard(text);
 					});
@@ -1088,16 +1088,16 @@
 						$button.prop('disabled', false);
 
 						if (response.success) {
-							$viewer.find('textarea').val(response.data.content || 'Log vazio');
+							$viewer.find('textarea').val(response.data.content || 'Log empty');
 							$viewer.slideDown();
 						} else {
-							alert(response.data.message || 'Erro ao visualizar log');
+							alert(response.data.message || 'Error viewing log');
 						}
 					},
 					error: function () {
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
-						alert('Erro ao visualizar log');
+						alert('Error viewing log');
 					}
 				});
 			});
@@ -1106,7 +1106,7 @@
 			$('#clear-debug-log').on('click', function (e) {
 				e.preventDefault();
 
-				if (!confirm('Deseja limpar o log de debug?')) {
+				if (!confirm('Clear debug log?')) {
 					return;
 				}
 
@@ -1131,15 +1131,15 @@
 						if (response.success) {
 							$viewer.find('textarea').val('');
 							$viewer.slideUp();
-							alert(response.data.message || 'Log limpo com sucesso!');
+							alert(response.data.message || 'Log cleared successfully!');
 						} else {
-							alert(response.data.message || 'Erro ao limpar log');
+							alert(response.data.message || 'Error clearing log');
 						}
 					},
 					error: function () {
 						$spinner.removeClass('is-active');
 						$button.prop('disabled', false);
-						alert('Erro ao limpar log');
+						alert('Error clearing log');
 					}
 				});
 			});
@@ -1160,7 +1160,7 @@
 				document.execCommand('copy');
 				alert('Informações do sistema copiadas para a área de transferência!');
 			} catch (err) {
-				alert('Erro ao copiar para a área de transferência');
+				alert('Error copying to clipboard');
 			}
 
 			document.body.removeChild(textArea);
