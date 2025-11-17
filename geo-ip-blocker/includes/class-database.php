@@ -22,7 +22,7 @@ class Geo_IP_Blocker_Database {
 	 *
 	 * @var string
 	 */
-	private $db_version = '1.0.0';
+	private $db_version = '1.1.0';
 
 	/**
 	 * Rules table name.
@@ -95,6 +95,196 @@ class Geo_IP_Blocker_Database {
 
 		// Update database version.
 		update_option( 'geo_ip_blocker_db_version', $this->db_version );
+	}
+
+	/**
+	 * Upgrade database schema.
+	 *
+	 * Adds performance indexes for common query patterns.
+	 */
+	public function upgrade_database() {
+		global $wpdb;
+
+		$current_version = get_option( 'geo_ip_blocker_db_version', '1.0.0' );
+
+		// Only upgrade if needed.
+		if ( version_compare( $current_version, $this->db_version, '>=' ) ) {
+			return;
+		}
+
+		// Upgrade to version 1.1.0 - Add performance indexes.
+		if ( version_compare( $current_version, '1.1.0', '<' ) ) {
+			// Add composite indexes to logs table for better query performance.
+			$this->add_index_if_not_exists(
+				$this->logs_table,
+				'country_created',
+				'(country_code, created_at)'
+			);
+
+			$this->add_index_if_not_exists(
+				$this->logs_table,
+				'ip_created',
+				'(ip_address, created_at)'
+			);
+
+			$this->add_index_if_not_exists(
+				$this->logs_table,
+				'block_reason',
+				'(block_reason)'
+			);
+
+			// Add composite index to rules table.
+			$this->add_index_if_not_exists(
+				$this->rules_table,
+				'rule_type_action',
+				'(rule_type, action)'
+			);
+
+			$this->add_index_if_not_exists(
+				$this->rules_table,
+				'value_rule_type',
+				'(value, rule_type)'
+			);
+		}
+
+		// Update database version.
+		update_option( 'geo_ip_blocker_db_version', $this->db_version );
+	}
+
+	/**
+	 * Add database index if it doesn't exist.
+	 *
+	 * @param string $table Table name.
+	 * @param string $index_name Index name.
+	 * @param string $columns Columns to index (e.g., '(column1, column2)').
+	 * @return bool True on success, false on failure.
+	 */
+	private function add_index_if_not_exists( $table, $index_name, $columns ) {
+		global $wpdb;
+
+		// Check if index exists.
+		$index_exists = $wpdb->get_var(
+			$wpdb->prepare(
+				"SHOW INDEX FROM {$table} WHERE Key_name = %s",
+				$index_name
+			)
+		);
+
+		if ( $index_exists ) {
+			return true; // Index already exists.
+		}
+
+		// Create index.
+		$result = $wpdb->query(
+			"ALTER TABLE {$table} ADD INDEX {$index_name} {$columns}"
+		);
+
+		return false !== $result;
+	}
+
+	/**
+	 * Optimize database tables.
+	 *
+	 * Runs OPTIMIZE TABLE to defragment and reclaim space.
+	 *
+	 * @return array Results of optimization.
+	 */
+	public function optimize_tables() {
+		global $wpdb;
+
+		$results = array();
+
+		// Optimize rules table.
+		$results['rules'] = $wpdb->get_results(
+			"OPTIMIZE TABLE {$this->rules_table}",
+			ARRAY_A
+		);
+
+		// Optimize logs table.
+		$results['logs'] = $wpdb->get_results(
+			"OPTIMIZE TABLE {$this->logs_table}",
+			ARRAY_A
+		);
+
+		return $results;
+	}
+
+	/**
+	 * Analyze database tables.
+	 *
+	 * Runs ANALYZE TABLE to update statistics for query optimization.
+	 *
+	 * @return array Results of analysis.
+	 */
+	public function analyze_tables() {
+		global $wpdb;
+
+		$results = array();
+
+		// Analyze rules table.
+		$results['rules'] = $wpdb->get_results(
+			"ANALYZE TABLE {$this->rules_table}",
+			ARRAY_A
+		);
+
+		// Analyze logs table.
+		$results['logs'] = $wpdb->get_results(
+			"ANALYZE TABLE {$this->logs_table}",
+			ARRAY_A
+		);
+
+		return $results;
+	}
+
+	/**
+	 * Get table statistics.
+	 *
+	 * @return array Table statistics including size and row counts.
+	 */
+	public function get_table_stats() {
+		global $wpdb;
+
+		$stats = array();
+
+		// Get rules table stats.
+		$rules_stats = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					table_rows AS row_count,
+					data_length AS data_size,
+					index_length AS index_size,
+					(data_length + index_length) AS total_size
+				FROM information_schema.TABLES
+				WHERE table_schema = %s
+				AND table_name = %s",
+				DB_NAME,
+				$this->rules_table
+			),
+			ARRAY_A
+		);
+
+		$stats['rules'] = $rules_stats ? $rules_stats : array();
+
+		// Get logs table stats.
+		$logs_stats = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT
+					table_rows AS row_count,
+					data_length AS data_size,
+					index_length AS index_size,
+					(data_length + index_length) AS total_size
+				FROM information_schema.TABLES
+				WHERE table_schema = %s
+				AND table_name = %s",
+				DB_NAME,
+				$this->logs_table
+			),
+			ARRAY_A
+		);
+
+		$stats['logs'] = $logs_stats ? $logs_stats : array();
+
+		return $stats;
 	}
 
 	/**

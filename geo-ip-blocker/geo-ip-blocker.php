@@ -115,6 +115,7 @@ final class Geo_IP_Blocker {
 		register_activation_hook( GEO_IP_BLOCKER_PLUGIN_FILE, array( $this, 'activate' ) );
 		register_deactivation_hook( GEO_IP_BLOCKER_PLUGIN_FILE, array( $this, 'deactivate' ) );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
+		add_action( 'plugins_loaded', array( $this, 'maybe_upgrade_database' ) );
 		add_action( 'init', array( $this, 'check_requirements' ) );
 	}
 
@@ -124,6 +125,9 @@ final class Geo_IP_Blocker {
 	private function includes() {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/functions.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-database.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-security.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-cache.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-rate-limiter.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geolocation.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-ip-manager.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-logger.php';
@@ -169,6 +173,23 @@ final class Geo_IP_Blocker {
 			false,
 			dirname( GEO_IP_BLOCKER_PLUGIN_BASENAME ) . '/languages'
 		);
+	}
+
+	/**
+	 * Maybe upgrade database schema.
+	 *
+	 * Checks if database needs upgrading and runs upgrade if necessary.
+	 */
+	public function maybe_upgrade_database() {
+		// Only run in admin or during AJAX requests.
+		if ( ! is_admin() && ! wp_doing_ajax() ) {
+			return;
+		}
+
+		// Run upgrade.
+		if ( $this->database ) {
+			$this->database->upgrade_database();
+		}
 	}
 
 	/**
@@ -253,6 +274,7 @@ final class Geo_IP_Blocker {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-database.php';
 		$database = new Geo_IP_Blocker_Database();
 		$database->create_tables();
+		$database->upgrade_database();
 
 		// Set default options.
 		add_option( 'geo_ip_blocker_version', GEO_IP_BLOCKER_VERSION );
