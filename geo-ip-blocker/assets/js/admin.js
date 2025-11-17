@@ -165,14 +165,26 @@
 				// Convert FormData to object for AJAX
 				const settings = {};
 				formData.forEach((value, key) => {
-					// Handle arrays (like country selections)
-					if (key.includes('[]')) {
-						const arrayKey = key.replace('[]', '');
-						if (!settings[arrayKey]) {
-							settings[arrayKey] = [];
+					// Extract field name from settings[field_name] or settings[field_name][] format
+					let fieldName = key;
+
+					// Check if key matches settings[...] pattern
+					const settingsMatch = key.match(/^settings\[([^\]]+)\](\[\])?$/);
+					if (settingsMatch) {
+						fieldName = settingsMatch[1]; // Extract the field name
+						const isArray = settingsMatch[2] === '[]'; // Check if it's an array field
+
+						if (isArray) {
+							// Handle arrays (like country selections)
+							if (!settings[fieldName]) {
+								settings[fieldName] = [];
+							}
+							settings[fieldName].push(value);
+						} else {
+							settings[fieldName] = value;
 						}
-						settings[arrayKey].push(value);
 					} else {
+						// For fields not in settings[...] format, keep as is
 						settings[key] = value;
 					}
 				});
