@@ -1,0 +1,23 @@
+/**
+ * Admin styles for Geo & IP Blocker
+ *
+ * @package GeoIPBlocker
+ */
+
+.geo-ip-blocker-dashboard,
+.geo-ip-blocker-rules,
+.geo-ip-blocker-logs,
+.geo-ip-blocker-settings {
+	margin-top: 20px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ccd0d4;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.geo-ip-blocker-dashboard h2,
+.geo-ip-blocker-rules h2,
+.geo-ip-blocker-logs h2,
+.geo-ip-blocker-settings h2 {
+	margin-top: 0;
+}

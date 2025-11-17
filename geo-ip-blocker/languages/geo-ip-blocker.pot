@@ -1,0 +1,11 @@
+# Copyright (C) 2024 Geo & IP Blocker for WooCommerce
+# This file is distributed under the same license as the Geo & IP Blocker for WooCommerce package.
+msgid ""
+msgstr ""
+"Project-Id-Version: Geo & IP Blocker for WooCommerce 1.0.0\n"
+"Report-Msgid-Bugs-To: https://github.com/JRG-code/Geo-and-IP-block/issues\n"
+"POT-Creation-Date: 2024-01-01 00:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language-Team: JRG Code\n"
