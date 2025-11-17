@@ -117,6 +117,15 @@ class Geo_IP_Blocker_Settings_Page {
 		// Exceptions AJAX handlers.
 		add_action( 'wp_ajax_geo_ip_blocker_search_users', array( $this, 'ajax_search_users' ) );
 		add_action( 'wp_ajax_geo_ip_blocker_search_pages', array( $this, 'ajax_search_pages' ) );
+
+		// Tools AJAX handlers.
+		add_action( 'wp_ajax_geo_ip_blocker_test_ip_location', array( $this, 'ajax_test_ip_location' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_clear_cache', array( $this, 'ajax_clear_cache' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_export_settings', array( $this, 'ajax_export_settings' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_import_settings', array( $this, 'ajax_import_settings' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_reset_settings', array( $this, 'ajax_reset_settings' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_view_debug_log', array( $this, 'ajax_view_debug_log' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_clear_debug_log', array( $this, 'ajax_clear_debug_log' ) );
 	}
 
 	/**
@@ -193,6 +202,9 @@ class Geo_IP_Blocker_Settings_Page {
 		$sanitized['enable_logging']       = ! empty( $input['enable_logging'] );
 		$sanitized['max_logs']             = absint( $input['max_logs'] );
 		$sanitized['log_retention_days']   = absint( $input['log_retention_days'] );
+
+		// Tools.
+		$sanitized['debug_mode']           = ! empty( $input['debug_mode'] );
 
 		return $sanitized;
 	}
@@ -289,7 +301,7 @@ class Geo_IP_Blocker_Settings_Page {
 	public function render() {
 		$settings     = $this->get_settings();
 		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
-		$allowed_tabs = array( 'general', 'api', 'countries', 'ip_blocking', 'exceptions', 'woocommerce', 'logging' );
+		$allowed_tabs = array( 'general', 'api', 'countries', 'ip_blocking', 'exceptions', 'woocommerce', 'logging', 'tools' );
 
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'general';
@@ -323,6 +335,9 @@ class Geo_IP_Blocker_Settings_Page {
 				<a href="?page=geo-ip-blocker-settings&tab=logging" class="nav-tab <?php echo 'logging' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Logging', 'geo-ip-blocker' ); ?>
 				</a>
+				<a href="?page=geo-ip-blocker-settings&tab=tools" class="nav-tab <?php echo 'tools' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Tools', 'geo-ip-blocker' ); ?>
+				</a>
 			</h2>
 
 			<div class="geo-ip-blocker-settings-content">
@@ -351,6 +366,9 @@ class Geo_IP_Blocker_Settings_Page {
 							break;
 						case 'logging':
 							$this->render_logging_tab( $settings );
+							break;
+						case 'tools':
+							$this->render_tools_tab( $settings );
 							break;
 					}
 					?>
@@ -1440,5 +1458,601 @@ class Geo_IP_Blocker_Settings_Page {
 		}
 
 		wp_send_json_success( array( 'results' => $results ) );
+	}
+
+	/**
+	 * Handle AJAX test IP location.
+	 */
+	public function ajax_test_ip_location() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$ip = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
+
+		if ( empty( $ip ) ) {
+			wp_send_json_error( array( 'message' => __( 'Please provide an IP address.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Validate IP format.
+		if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid IP address format.', 'geo-ip-blocker' ) ) );
+		}
+
+		$geolocation = geo_ip_blocker_get_geolocation();
+		$result      = $geolocation->get_location_data( $ip );
+
+		if ( empty( $result ) || empty( $result['country_code'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unable to locate IP address. Please check your API configuration.', 'geo-ip-blocker' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'IP location found successfully!', 'geo-ip-blocker' ),
+				'data'    => $result,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX clear cache.
+	 */
+	public function ajax_clear_cache() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Clear transients used for caching geolocation data.
+		global $wpdb;
+		$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_geo_ip_blocker_%' OR option_name LIKE '_transient_timeout_geo_ip_blocker_%'" );
+
+		wp_send_json_success( array( 'message' => __( 'Cache cleared successfully!', 'geo-ip-blocker' ) ) );
+	}
+
+	/**
+	 * Handle AJAX export settings.
+	 */
+	public function ajax_export_settings() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$settings = $this->get_settings();
+
+		// Remove sensitive data.
+		unset( $settings['maxmind_license_key'] );
+		unset( $settings['ip2location_api_key'] );
+
+		// Prepare export data.
+		$export_data = array(
+			'version'      => GEO_IP_BLOCKER_VERSION,
+			'export_date'  => current_time( 'mysql' ),
+			'settings'     => $settings,
+		);
+
+		wp_send_json_success(
+			array(
+				'message'  => __( 'Settings exported successfully!', 'geo-ip-blocker' ),
+				'data'     => wp_json_encode( $export_data, JSON_PRETTY_PRINT ),
+				'filename' => 'geo-ip-blocker-settings-' . gmdate( 'Y-m-d-His' ) . '.json',
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX import settings.
+	 */
+	public function ajax_import_settings() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		if ( ! isset( $_POST['settings_data'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'No settings data provided.', 'geo-ip-blocker' ) ) );
+		}
+
+		$import_data = json_decode( wp_unslash( $_POST['settings_data'] ), true ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid JSON format.', 'geo-ip-blocker' ) ) );
+		}
+
+		if ( ! isset( $import_data['settings'] ) || ! is_array( $import_data['settings'] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid settings file format.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Merge with current settings to preserve sensitive data.
+		$current_settings = $this->get_settings();
+		$new_settings     = array_merge( $current_settings, $import_data['settings'] );
+
+		// Preserve API keys from current settings.
+		$new_settings['maxmind_license_key'] = $current_settings['maxmind_license_key'];
+		$new_settings['ip2location_api_key'] = $current_settings['ip2location_api_key'];
+
+		// Sanitize and save.
+		$sanitized = $this->sanitize_settings( $new_settings );
+		update_option( $this->option_name, $sanitized );
+
+		wp_send_json_success( array( 'message' => __( 'Settings imported successfully!', 'geo-ip-blocker' ) ) );
+	}
+
+	/**
+	 * Handle AJAX reset settings.
+	 */
+	public function ajax_reset_settings() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Reset to default settings.
+		update_option( $this->option_name, $this->default_settings );
+
+		wp_send_json_success( array( 'message' => __( 'Settings reset to defaults successfully!', 'geo-ip-blocker' ) ) );
+	}
+
+	/**
+	 * Handle AJAX view debug log.
+	 */
+	public function ajax_view_debug_log() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$log_file = WP_CONTENT_DIR . '/geo-ip-blocker-debug.log';
+
+		if ( ! file_exists( $log_file ) ) {
+			wp_send_json_success(
+				array(
+					'message' => __( 'Debug log is empty.', 'geo-ip-blocker' ),
+					'content' => '',
+				)
+			);
+		}
+
+		// Read last 1000 lines.
+		$lines = array();
+		$file  = new SplFileObject( $log_file, 'r' );
+		$file->seek( PHP_INT_MAX );
+		$last_line = $file->key();
+		$start     = max( 0, $last_line - 1000 );
+
+		$file->seek( $start );
+		while ( ! $file->eof() ) {
+			$lines[] = $file->fgets();
+		}
+
+		$content = implode( '', $lines );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Debug log loaded successfully!', 'geo-ip-blocker' ),
+				'content' => $content,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX clear debug log.
+	 */
+	public function ajax_clear_debug_log() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$log_file = WP_CONTENT_DIR . '/geo-ip-blocker-debug.log';
+
+		if ( file_exists( $log_file ) ) {
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
+			unlink( $log_file );
+		}
+
+		wp_send_json_success( array( 'message' => __( 'Debug log cleared successfully!', 'geo-ip-blocker' ) ) );
+	}
+
+	/**
+	 * Render Tools tab.
+	 *
+	 * @param array $settings Current settings.
+	 */
+	private function render_tools_tab( $settings ) {
+		global $wpdb;
+		$geolocation = geo_ip_blocker_get_geolocation();
+		$current_ip  = $geolocation ? $geolocation->get_visitor_ip() : '';
+		?>
+		<div class="geo-ip-blocker-tools-section">
+			<!-- Section 1: Test IP Location -->
+			<div class="tools-section">
+				<h2><?php esc_html_e( '1. Test IP Location', 'geo-ip-blocker' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Test the geolocation lookup for any IP address to verify your API configuration and results.', 'geo-ip-blocker' ); ?></p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<label for="test-ip-input"><?php esc_html_e( 'IP Address to Test', 'geo-ip-blocker' ); ?></label>
+						</th>
+						<td>
+							<input type="text" id="test-ip-input" class="regular-text" placeholder="<?php esc_attr_e( 'Enter IP address (e.g., 8.8.8.8)', 'geo-ip-blocker' ); ?>" value="">
+							<button type="button" id="test-ip-button" class="button button-secondary">
+								<?php esc_html_e( 'Test IP Location', 'geo-ip-blocker' ); ?>
+							</button>
+							<?php if ( $current_ip ) : ?>
+							<button type="button" id="test-current-ip-button" class="button button-secondary" data-ip="<?php echo esc_attr( $current_ip ); ?>">
+								<?php printf( esc_html__( 'Test My IP (%s)', 'geo-ip-blocker' ), esc_html( $current_ip ) ); ?>
+							</button>
+							<?php endif; ?>
+							<span class="spinner"></span>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Test Results', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<div id="ip-test-results" class="ip-test-results" style="display: none;">
+								<table class="widefat striped">
+									<tbody>
+										<tr>
+											<th><?php esc_html_e( 'IP Address:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-ip"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Country:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-country"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Country Code:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-country-code"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Region:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-region"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'City:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-city"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Latitude:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-lat"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Longitude:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-lon"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'Timezone:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-timezone"></td>
+										</tr>
+										<tr>
+											<th><?php esc_html_e( 'ISP:', 'geo-ip-blocker' ); ?></th>
+											<td id="result-isp"></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+							<div id="ip-test-error" class="notice notice-error inline" style="display: none;">
+								<p></p>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<hr>
+
+			<!-- Section 2: GeoIP Database Management -->
+			<div class="tools-section">
+				<h2><?php esc_html_e( '2. GeoIP Database Management', 'geo-ip-blocker' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Manage your local GeoIP database, update it manually, and clear cached data.', 'geo-ip-blocker' ); ?></p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Database Information', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<table class="widefat striped">
+								<tbody>
+									<tr>
+										<th><?php esc_html_e( 'Provider:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( ucfirst( $settings['geolocation_provider'] ) ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Local Database:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo $settings['enable_local_database'] ? esc_html__( 'Enabled', 'geo-ip-blocker' ) : esc_html__( 'Disabled', 'geo-ip-blocker' ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Auto-Update:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo $settings['auto_update_database'] ? esc_html__( 'Enabled', 'geo-ip-blocker' ) : esc_html__( 'Disabled', 'geo-ip-blocker' ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Last Update:', 'geo-ip-blocker' ); ?></th>
+										<td>
+											<?php
+											if ( ! empty( $settings['last_db_update'] ) ) {
+												echo esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $settings['last_db_update'] ) ) );
+											} else {
+												esc_html_e( 'Never', 'geo-ip-blocker' );
+											}
+											?>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Database Actions', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<button type="button" id="update-geoip-database" class="button button-secondary">
+								<?php esc_html_e( 'Update Database Now', 'geo-ip-blocker' ); ?>
+							</button>
+							<button type="button" id="clear-geoip-cache" class="button button-secondary">
+								<?php esc_html_e( 'Clear Cache', 'geo-ip-blocker' ); ?>
+							</button>
+							<span class="spinner"></span>
+							<p class="description"><?php esc_html_e( 'Manually update the GeoIP database or clear cached geolocation results.', 'geo-ip-blocker' ); ?></p>
+							<div id="database-action-result" class="notice inline" style="display: none; margin-top: 10px;">
+								<p></p>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<hr>
+
+			<!-- Section 3: Import/Export Settings -->
+			<div class="tools-section">
+				<h2><?php esc_html_e( '3. Import/Export Settings', 'geo-ip-blocker' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Backup your plugin settings by exporting to JSON or restore settings from a backup file.', 'geo-ip-blocker' ); ?></p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Export Settings', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<button type="button" id="export-settings-button" class="button button-secondary">
+								<?php esc_html_e( 'Export Settings to JSON', 'geo-ip-blocker' ); ?>
+							</button>
+							<p class="description"><?php esc_html_e( 'Download all plugin settings as a JSON file for backup or migration.', 'geo-ip-blocker' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="import-settings-file"><?php esc_html_e( 'Import Settings', 'geo-ip-blocker' ); ?></label>
+						</th>
+						<td>
+							<input type="file" id="import-settings-file" accept=".json" class="regular-text">
+							<button type="button" id="import-settings-button" class="button button-secondary">
+								<?php esc_html_e( 'Import Settings', 'geo-ip-blocker' ); ?>
+							</button>
+							<span class="spinner"></span>
+							<p class="description"><?php esc_html_e( 'Upload a JSON backup file to restore settings. This will overwrite current settings.', 'geo-ip-blocker' ); ?></p>
+							<div id="import-result" class="notice inline" style="display: none; margin-top: 10px;">
+								<p></p>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Reset Settings', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<button type="button" id="reset-settings-button" class="button button-secondary">
+								<?php esc_html_e( 'Reset to Defaults', 'geo-ip-blocker' ); ?>
+							</button>
+							<span class="spinner"></span>
+							<p class="description"><?php esc_html_e( 'Reset all plugin settings to their default values. This action cannot be undone.', 'geo-ip-blocker' ); ?></p>
+							<div id="reset-result" class="notice inline" style="display: none; margin-top: 10px;">
+								<p></p>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<hr>
+
+			<!-- Section 4: Country List Bulk Management -->
+			<div class="tools-section">
+				<h2><?php esc_html_e( '4. Country List Bulk Management', 'geo-ip-blocker' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'Quickly select or deselect groups of countries using predefined regional presets.', 'geo-ip-blocker' ); ?></p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Search Countries', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<input type="text" id="country-search-input" class="regular-text" placeholder="<?php esc_attr_e( 'Search for countries...', 'geo-ip-blocker' ); ?>">
+							<button type="button" id="country-search-button" class="button button-secondary">
+								<?php esc_html_e( 'Search', 'geo-ip-blocker' ); ?>
+							</button>
+							<div id="country-search-results" class="country-search-results" style="margin-top: 10px; display: none;">
+								<!-- Results will be populated via JavaScript -->
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Regional Presets', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<p class="description"><?php esc_html_e( 'Quickly select multiple countries by region:', 'geo-ip-blocker' ); ?></p>
+							<div class="regional-presets" style="margin-top: 10px;">
+								<button type="button" class="button button-secondary select-region-preset" data-region="eu">
+									<?php esc_html_e( 'European Union (27)', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="europe">
+									<?php esc_html_e( 'Europe (All)', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="north-america">
+									<?php esc_html_e( 'North America', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="south-america">
+									<?php esc_html_e( 'South America', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="asia">
+									<?php esc_html_e( 'Asia', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="africa">
+									<?php esc_html_e( 'Africa', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="oceania">
+									<?php esc_html_e( 'Oceania', 'geo-ip-blocker' ); ?>
+								</button>
+								<button type="button" class="button button-secondary select-region-preset" data-region="middle-east">
+									<?php esc_html_e( 'Middle East', 'geo-ip-blocker' ); ?>
+								</button>
+							</div>
+							<p class="description" style="margin-top: 10px;">
+								<?php esc_html_e( 'Note: These presets will be applied to your current blocking mode (whitelist or blacklist) when you navigate to the Countries tab.', 'geo-ip-blocker' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<hr>
+
+			<!-- Section 5: System Info and Debug -->
+			<div class="tools-section">
+				<h2><?php esc_html_e( '5. System Information & Debug', 'geo-ip-blocker' ); ?></h2>
+				<p class="description"><?php esc_html_e( 'View system information and enable debug mode for troubleshooting.', 'geo-ip-blocker' ); ?></p>
+
+				<table class="form-table">
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'System Information', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<table class="widefat striped">
+								<tbody>
+									<tr>
+										<th><?php esc_html_e( 'PHP Version:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( phpversion() ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'WordPress Version:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( get_bloginfo( 'version' ) ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'WooCommerce Version:', 'geo-ip-blocker' ); ?></th>
+										<td>
+											<?php
+											if ( class_exists( 'WooCommerce' ) ) {
+												echo esc_html( WC()->version );
+											} else {
+												esc_html_e( 'Not installed', 'geo-ip-blocker' );
+											}
+											?>
+										</td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Plugin Version:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( GEO_IP_BLOCKER_VERSION ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Active Geolocation Provider:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( ucfirst( $settings['geolocation_provider'] ) ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Database Status:', 'geo-ip-blocker' ); ?></th>
+										<td>
+											<?php
+											$table_name = $wpdb->prefix . 'geo_ip_blocker_logs';
+											$table_exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) === $table_name;
+											echo $table_exists ? esc_html__( 'Tables created', 'geo-ip-blocker' ) : esc_html__( 'Tables missing', 'geo-ip-blocker' );
+											?>
+										</td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Memory Limit:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( ini_get( 'memory_limit' ) ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Max Upload Size:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( size_format( wp_max_upload_size() ) ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Server IP:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( isset( $_SERVER['SERVER_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['SERVER_ADDR'] ) ) : 'N/A' ); ?></td>
+									</tr>
+									<tr>
+										<th><?php esc_html_e( 'Your IP:', 'geo-ip-blocker' ); ?></th>
+										<td><?php echo esc_html( $current_ip ? $current_ip : 'N/A' ); ?></td>
+									</tr>
+								</tbody>
+							</table>
+							<button type="button" id="copy-system-info" class="button button-secondary" style="margin-top: 10px;">
+								<?php esc_html_e( 'Copy System Info to Clipboard', 'geo-ip-blocker' ); ?>
+							</button>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Debug Mode', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<label>
+								<input type="checkbox" name="settings[debug_mode]" id="debug_mode" value="1" <?php checked( ! empty( $settings['debug_mode'] ), true ); ?>>
+								<?php esc_html_e( 'Enable debug mode', 'geo-ip-blocker' ); ?>
+							</label>
+							<p class="description"><?php esc_html_e( 'When enabled, detailed debugging information will be logged to help troubleshoot issues.', 'geo-ip-blocker' ); ?></p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<?php esc_html_e( 'Debug Log', 'geo-ip-blocker' ); ?>
+						</th>
+						<td>
+							<button type="button" id="view-debug-log" class="button button-secondary">
+								<?php esc_html_e( 'View Debug Log', 'geo-ip-blocker' ); ?>
+							</button>
+							<button type="button" id="clear-debug-log" class="button button-secondary">
+								<?php esc_html_e( 'Clear Debug Log', 'geo-ip-blocker' ); ?>
+							</button>
+							<span class="spinner"></span>
+							<div id="debug-log-viewer" class="debug-log-viewer" style="display: none; margin-top: 10px;">
+								<textarea readonly style="width: 100%; height: 300px; font-family: monospace; font-size: 12px;"></textarea>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<?php
 	}
 }
