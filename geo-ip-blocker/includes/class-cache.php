@@ -410,8 +410,8 @@ class Geo_IP_Blocker_Cache {
 		// Load and cache IP lists.
 		$ip_manager = geo_ip_blocker_get_ip_manager();
 		if ( $ip_manager ) {
-			$this->cache_ip_list( 'whitelist', $ip_manager->get_whitelist() );
-			$this->cache_ip_list( 'blacklist', $ip_manager->get_blacklist() );
+			$this->cache_ip_list( 'whitelist', $ip_manager->get_list( 'whitelist' ) );
+			$this->cache_ip_list( 'blacklist', $ip_manager->get_list( 'blacklist' ) );
 		}
 
 		do_action( 'geo_ip_blocker_cache_warmed_up' );

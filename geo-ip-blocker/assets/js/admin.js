@@ -20,13 +20,14 @@
 			this.initTestApiButton();
 			this.initUpdateDatabaseButton();
 			this.initCountryActions();
+			this.initRegionSelect();
 			this.initCountryTags();
 			this.initIPManagement();
 			this.initExceptionsManagement();
 		},
 
 		/**
-		 * Initialize Select2 for country selection
+		 * Initialize Select2 for country and region selection
 		 */
 		initSelect2: function () {
 			if (typeof $.fn.select2 !== 'undefined') {
@@ -39,6 +40,13 @@
 				// Update selected countries list when selection changes
 				$('.geo-ip-blocker-country-select').on('change', function () {
 					SettingsPage.updateSelectedCountriesList();
+				});
+
+				// Initialize Select2 for region selector
+				$('.geo-ip-blocker-region-select').select2({
+					placeholder: 'Select a region...',
+					allowClear: true,
+					width: '100%'
 				});
 			}
 		},
@@ -334,6 +342,50 @@
 				if (confirm(geoIPBlockerSettings.strings.confirmClear)) {
 					const $select = $('.geo-ip-blocker-country-select');
 					$select.val(null).trigger('change');
+				}
+			});
+		},
+
+		/**
+		 * Handle region selection to add multiple countries at once
+		 */
+		initRegionSelect: function () {
+			$('#region-select').on('change', function (e) {
+				const $regionSelect = $(this);
+				const $option = $regionSelect.find('option:selected');
+				const countries = $option.data('countries');
+
+				if (!countries) {
+					return;
+				}
+
+				// Convert comma-separated string to array
+				const countryArray = countries.toString().split(',');
+				const $countrySelect = $('.geo-ip-blocker-country-select');
+
+				// Get currently selected values
+				let currentValues = $countrySelect.val() || [];
+				if (!Array.isArray(currentValues)) {
+					currentValues = [currentValues];
+				}
+
+				// Add region countries to selection (avoiding duplicates)
+				countryArray.forEach(function (countryCode) {
+					if (currentValues.indexOf(countryCode) === -1) {
+						currentValues.push(countryCode);
+					}
+				});
+
+				// Update selection
+				$countrySelect.val(currentValues).trigger('change');
+
+				// Reset region selector
+				$regionSelect.val('').trigger('change');
+
+				// Show notification
+				const regionName = $option.text();
+				if (typeof geoIPBlockerSettings !== 'undefined' && geoIPBlockerSettings.strings) {
+					alert(regionName + ' countries added to selection.');
 				}
 			});
 		},

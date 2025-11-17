@@ -121,7 +121,7 @@ class Test_IP_Manager extends WP_UnitTestCase {
 		$this->assertTrue( $result );
 
 		// Verify IP is in blacklist.
-		$blacklist = $this->manager->get_blacklist();
+		$blacklist = $this->manager->get_list( 'blacklist' );
 		$this->assertContains( $ip, $blacklist );
 	}
 
@@ -136,7 +136,7 @@ class Test_IP_Manager extends WP_UnitTestCase {
 		$this->assertTrue( $result );
 
 		// Verify IP is in whitelist.
-		$whitelist = $this->manager->get_whitelist();
+		$whitelist = $this->manager->get_list( 'whitelist' );
 		$this->assertContains( $ip, $whitelist );
 	}
 
@@ -150,7 +150,7 @@ class Test_IP_Manager extends WP_UnitTestCase {
 		$this->manager->add_ip_to_list( $ip, 'blacklist' );
 
 		// Verify IP is in blacklist.
-		$blacklist = $this->manager->get_blacklist();
+		$blacklist = $this->manager->get_list( 'blacklist' );
 		$this->assertContains( $ip, $blacklist );
 
 		// Remove IP from blacklist.
@@ -158,7 +158,7 @@ class Test_IP_Manager extends WP_UnitTestCase {
 		$this->assertTrue( $result );
 
 		// Verify IP is no longer in blacklist.
-		$blacklist = $this->manager->get_blacklist();
+		$blacklist = $this->manager->get_list( 'blacklist' );
 		$this->assertNotContains( $ip, $blacklist );
 	}
 
@@ -203,14 +203,14 @@ class Test_IP_Manager extends WP_UnitTestCase {
 		$this->manager->add_ip_to_list( '25.26.27.28', 'blacklist' );
 
 		// Verify blacklist is not empty.
-		$blacklist = $this->manager->get_blacklist();
+		$blacklist = $this->manager->get_list( 'blacklist' );
 		$this->assertNotEmpty( $blacklist );
 
 		// Clear blacklist.
 		$this->manager->clear_list( 'blacklist' );
 
 		// Verify blacklist is empty.
-		$blacklist = $this->manager->get_blacklist();
+		$blacklist = $this->manager->get_list( 'blacklist' );
 		$this->assertEmpty( $blacklist );
 	}
 
@@ -238,12 +238,12 @@ class Test_IP_Manager extends WP_UnitTestCase {
 
 		// Add IP once.
 		$this->manager->add_ip_to_list( $ip, 'blacklist' );
-		$blacklist1 = $this->manager->get_blacklist();
+		$blacklist1 = $this->manager->get_list( 'blacklist' );
 		$count1     = count( $blacklist1 );
 
 		// Add same IP again.
 		$this->manager->add_ip_to_list( $ip, 'blacklist' );
-		$blacklist2 = $this->manager->get_blacklist();
+		$blacklist2 = $this->manager->get_list( 'blacklist' );
 		$count2     = count( $blacklist2 );
 
 		// Count should be the same (no duplicates).

@@ -695,6 +695,7 @@ class Geo_IP_Blocker_Settings_Page {
 	 */
 	private function render_countries_tab( $settings ) {
 		$countries        = geo_ip_blocker_get_countries();
+		$regions          = geo_ip_blocker_get_country_regions();
 		$blocking_mode    = $settings['blocking_mode'];
 		$blocked_countries = $settings['blocked_countries'];
 		$allowed_countries = $settings['allowed_countries'];
@@ -703,14 +704,41 @@ class Geo_IP_Blocker_Settings_Page {
 			<p class="description">
 				<?php
 				if ( 'blacklist' === $blocking_mode ) {
-					esc_html_e( 'Select countries to block. Visitors from these countries will not be able to access your site.', 'geo-ip-blocker' );
+					esc_html_e( 'Select countries or regions to block. Visitors from these countries will not be able to access your site.', 'geo-ip-blocker' );
 				} else {
-					esc_html_e( 'Select countries to allow. Only visitors from these countries will be able to access your site.', 'geo-ip-blocker' );
+					esc_html_e( 'Select countries or regions to allow. Only visitors from these countries will be able to access your site.', 'geo-ip-blocker' );
 				}
 				?>
 			</p>
 
 			<table class="form-table">
+				<tr>
+					<th scope="row">
+						<label for="region-select">
+							<?php esc_html_e( 'Quick Select Regions', 'geo-ip-blocker' ); ?>
+						</label>
+					</th>
+					<td>
+						<select id="region-select" class="geo-ip-blocker-region-select" style="width: 100%; max-width: 500px;">
+							<option value=""><?php esc_html_e( '-- Select a region --', 'geo-ip-blocker' ); ?></option>
+							<?php
+							foreach ( $regions as $region_code => $region_data ) {
+								printf(
+									'<option value="%s" data-countries="%s">%s (%d countries)</option>',
+									esc_attr( $region_code ),
+									esc_attr( implode( ',', $region_data['countries'] ) ),
+									esc_html( $region_data['name'] ),
+									count( $region_data['countries'] )
+								);
+							}
+							?>
+						</select>
+						<p class="description">
+							<?php esc_html_e( 'Select a region to quickly add all its member countries to the list below.', 'geo-ip-blocker' ); ?>
+						</p>
+					</td>
+				</tr>
+
 				<tr>
 					<th scope="row">
 						<label for="country-select">
@@ -954,8 +982,8 @@ class Geo_IP_Blocker_Settings_Page {
 	 */
 	private function render_ip_blocking_tab( $settings ) {
 		$ip_manager    = geo_ip_blocker_get_ip_manager();
-		$ip_whitelist  = $ip_manager ? $ip_manager->get_whitelist() : array();
-		$ip_blacklist  = $ip_manager ? $ip_manager->get_blacklist() : array();
+		$ip_whitelist  = $ip_manager ? $ip_manager->get_list( 'whitelist' ) : array();
+		$ip_blacklist  = $ip_manager ? $ip_manager->get_list( 'blacklist' ) : array();
 		$geolocation   = geo_ip_blocker_get_geolocation();
 		$current_ip    = $geolocation ? $geolocation->get_visitor_ip() : '';
 		?>
