@@ -525,3 +525,83 @@ function geo_ip_blocker_get_ip_stats() {
 	$manager = geo_ip_blocker_get_ip_manager();
 	return $manager->get_statistics();
 }
+
+/**
+ * Get Blocker instance.
+ *
+ * @return Geo_Blocker_Blocker
+ */
+function geo_ip_blocker_get_blocker() {
+	static $blocker = null;
+
+	if ( null === $blocker ) {
+		$blocker = new Geo_Blocker_Blocker();
+	}
+
+	return $blocker;
+}
+
+/**
+ * Get available WordPress roles.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_roles() {
+	global $wp_roles;
+
+	if ( ! isset( $wp_roles ) ) {
+		$wp_roles = new WP_Roles();
+	}
+
+	return $wp_roles->get_names();
+}
+
+/**
+ * Get blocking statistics.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_blocking_stats() {
+	$blocker = geo_ip_blocker_get_blocker();
+	return $blocker->get_statistics();
+}
+
+/**
+ * Get available block actions.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_block_actions() {
+	return array(
+		'message'  => __( 'Show Message', 'geo-ip-blocker' ),
+		'redirect' => __( 'Redirect to URL', 'geo-ip-blocker' ),
+		'page'     => __( 'Show WordPress Page', 'geo-ip-blocker' ),
+		'403'      => __( 'Show 403 Error', 'geo-ip-blocker' ),
+	);
+}
+
+/**
+ * Get available blocking modes.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_blocking_modes() {
+	return array(
+		'blacklist' => __( 'Blacklist Mode (Block selected countries)', 'geo-ip-blocker' ),
+		'whitelist' => __( 'Whitelist Mode (Allow only selected countries)', 'geo-ip-blocker' ),
+	);
+}
+
+/**
+ * Get WooCommerce blocking modes.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_woo_blocking_modes() {
+	return array(
+		'all'           => __( 'Block entire site', 'geo-ip-blocker' ),
+		'woo_only'      => __( 'Block only WooCommerce pages', 'geo-ip-blocker' ),
+		'checkout_only' => __( 'Block only checkout/cart', 'geo-ip-blocker' ),
+		'none'          => __( 'Do not block WooCommerce', 'geo-ip-blocker' ),
+	);
+}

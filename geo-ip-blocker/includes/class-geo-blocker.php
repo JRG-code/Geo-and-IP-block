@@ -50,9 +50,13 @@ class Geo_IP_Blocker_Handler {
 
 	/**
 	 * Initialize hooks.
+	 *
+	 * Note: Blocking hooks moved to Geo_Blocker_Blocker class.
+	 * This class now serves as a helper for backwards compatibility.
 	 */
 	private function init_hooks() {
-		add_action( 'init', array( $this, 'check_access' ), 1 );
+		// Hooks disabled - blocking now handled by Geo_Blocker_Blocker class.
+		// add_action( 'init', array( $this, 'check_access' ), 1 );
 	}
 
 	/**

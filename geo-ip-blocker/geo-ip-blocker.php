@@ -127,6 +127,7 @@ final class Geo_IP_Blocker {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geolocation.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-ip-manager.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geo-blocker.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-blocker.php';
 
 		if ( is_admin() ) {
 			require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'admin/class-admin.php';
@@ -141,6 +142,9 @@ final class Geo_IP_Blocker {
 
 		if ( is_admin() ) {
 			$this->admin = new Geo_IP_Blocker_Admin();
+		} else {
+			// Initialize blocker for frontend only.
+			geo_ip_blocker_get_blocker();
 		}
 	}
 
