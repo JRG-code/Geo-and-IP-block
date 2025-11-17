@@ -946,8 +946,8 @@ class Geo_IP_Blocker_Settings_Page {
 	 */
 	private function render_ip_blocking_tab( $settings ) {
 		$ip_manager    = geo_ip_blocker_get_ip_manager();
-		$ip_whitelist  = $ip_manager ? $ip_manager->get_whitelist() : array();
-		$ip_blacklist  = $ip_manager ? $ip_manager->get_blacklist() : array();
+		$ip_whitelist  = $ip_manager ? $ip_manager->get_list( 'whitelist' ) : array();
+		$ip_blacklist  = $ip_manager ? $ip_manager->get_list( 'blacklist' ) : array();
 		$geolocation   = geo_ip_blocker_get_geolocation();
 		$current_ip    = $geolocation ? $geolocation->get_visitor_ip() : '';
 		?>
