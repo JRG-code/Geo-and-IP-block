@@ -286,3 +286,106 @@ function geo_ip_blocker_update_setting( $key, $value ) {
 	$settings[ $key ] = $value;
 	return update_option( 'geo_ip_blocker_settings', $settings );
 }
+
+/**
+ * Get geolocation instance.
+ *
+ * @return Geo_Blocker_Geolocation
+ */
+function geo_ip_blocker_get_geolocation() {
+	return new Geo_Blocker_Geolocation();
+}
+
+/**
+ * Get visitor's current IP address.
+ *
+ * @return string|false IP address or false.
+ */
+function geo_ip_blocker_get_current_ip() {
+	$geolocation = geo_ip_blocker_get_geolocation();
+	return $geolocation->get_visitor_ip();
+}
+
+/**
+ * Get location data for current visitor.
+ *
+ * @return array|false Location data or false.
+ */
+function geo_ip_blocker_get_current_location() {
+	$ip = geo_ip_blocker_get_current_ip();
+	if ( ! $ip ) {
+		return false;
+	}
+
+	$geolocation = geo_ip_blocker_get_geolocation();
+	return $geolocation->get_location_data( $ip );
+}
+
+/**
+ * Get country code for current visitor.
+ *
+ * @return string Country code or 'UNKNOWN'.
+ */
+function geo_ip_blocker_get_current_country() {
+	$ip = geo_ip_blocker_get_current_ip();
+	if ( ! $ip ) {
+		return 'UNKNOWN';
+	}
+
+	$geolocation = geo_ip_blocker_get_geolocation();
+	return $geolocation->get_country_code( $ip );
+}
+
+/**
+ * Get location data for a specific IP address.
+ *
+ * @param string $ip IP address.
+ * @return array|false Location data or false.
+ */
+function geo_ip_blocker_get_ip_location( $ip ) {
+	$geolocation = geo_ip_blocker_get_geolocation();
+	return $geolocation->get_location_data( $ip );
+}
+
+/**
+ * Clear geolocation cache.
+ *
+ * @param string $ip Optional. Specific IP to clear.
+ */
+function geo_ip_blocker_clear_geo_cache( $ip = '' ) {
+	$geolocation = geo_ip_blocker_get_geolocation();
+	$geolocation->clear_cache( $ip );
+}
+
+/**
+ * Get available geolocation providers.
+ *
+ * @return array
+ */
+function geo_ip_blocker_get_providers() {
+	return array(
+		'maxmind'     => __( 'MaxMind GeoIP2', 'geo-ip-blocker' ),
+		'ip2location' => __( 'IP2Location', 'geo-ip-blocker' ),
+		'ipapi'       => __( 'IP-API.com (Free)', 'geo-ip-blocker' ),
+	);
+}
+
+/**
+ * Check if local database is available.
+ *
+ * @return bool
+ */
+function geo_ip_blocker_has_local_database() {
+	$upload_dir = wp_upload_dir();
+	$db_path    = $upload_dir['basedir'] . '/geo-ip-blocker/GeoLite2-City.mmdb';
+	return file_exists( $db_path );
+}
+
+/**
+ * Get local database last update time.
+ *
+ * @return int|false Timestamp or false.
+ */
+function geo_ip_blocker_get_db_last_update() {
+	return get_option( 'geo_ip_blocker_db_last_update', false );
+}

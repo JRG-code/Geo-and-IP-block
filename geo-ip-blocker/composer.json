@@ -1,0 +1,39 @@
+{
+    "name": "jrg-code/geo-ip-blocker",
+    "description": "Geo & IP Blocker for WooCommerce - Block access by country, region or IP",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "JRG Code",
+            "email": "contact@jrgcode.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4"
+    },
+    "require-dev": {
+        "geoip2/geoip2": "~2.0"
+    },
+    "suggest": {
+        "geoip2/geoip2": "Required for local MaxMind GeoIP2 database support"
+    },
+    "autoload": {
+        "psr-4": {
+            "GeoIPBlocker\\": "includes/"
+        }
+    },
+    "config": {
+        "vendor-dir": "vendor",
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@php -r \"echo '\\n✓ Geo & IP Blocker dependencies installed successfully.\\n';\""
+        ],
+        "post-update-cmd": [
+            "@php -r \"echo '\\n✓ Geo & IP Blocker dependencies updated successfully.\\n';\""
+        ]
+    }
+}

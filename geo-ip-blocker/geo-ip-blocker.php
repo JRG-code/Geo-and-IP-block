@@ -124,6 +124,7 @@ final class Geo_IP_Blocker {
 	private function includes() {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/functions.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-database.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geolocation.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-geo-blocker.php';
 
 		if ( is_admin() ) {

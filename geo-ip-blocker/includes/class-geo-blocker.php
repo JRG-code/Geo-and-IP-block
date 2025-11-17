@@ -25,10 +25,18 @@ class Geo_IP_Blocker_Handler {
 	private $database;
 
 	/**
+	 * Geolocation instance.
+	 *
+	 * @var Geo_Blocker_Geolocation
+	 */
+	private $geolocation;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->database = new Geo_IP_Blocker_Database();
+		$this->database    = new Geo_IP_Blocker_Database();
+		$this->geolocation = new Geo_Blocker_Geolocation();
 		$this->init_hooks();
 	}
 
@@ -48,79 +56,20 @@ class Geo_IP_Blocker_Handler {
 			return;
 		}
 
-		// Get client IP.
-		$ip_address = $this->get_client_ip();
+		// Get client IP using geolocation class.
+		$ip_address = $this->geolocation->get_visitor_ip();
 
 		if ( empty( $ip_address ) ) {
 			return;
 		}
 
-		// Get geo data (placeholder - will be implemented later).
-		$geo_data = $this->get_geo_data( $ip_address );
+		// Get geo data using geolocation class.
+		$geo_data = $this->geolocation->get_location_data( $ip_address );
 
 		// Check blocking rules.
 		if ( $this->should_block( $ip_address, $geo_data ) ) {
 			$this->block_access( $ip_address, $geo_data );
 		}
-	}
-
-	/**
-	 * Get client IP address.
-	 *
-	 * @return string
-	 */
-	public function get_client_ip() {
-		$ip_keys = array(
-			'HTTP_CF_CONNECTING_IP', // Cloudflare
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_X_FORWARDED',
-			'HTTP_X_CLUSTER_CLIENT_IP',
-			'HTTP_FORWARDED_FOR',
-			'HTTP_FORWARDED',
-			'HTTP_CLIENT_IP',
-			'REMOTE_ADDR',
-		);
-
-		foreach ( $ip_keys as $key ) {
-			if ( ! empty( $_SERVER[ $key ] ) ) {
-				$ip = sanitize_text_field( wp_unslash( $_SERVER[ $key ] ) );
-
-				// Handle multiple IPs (take the first one).
-				if ( strpos( $ip, ',' ) !== false ) {
-					$ips = explode( ',', $ip );
-					$ip  = trim( $ips[0] );
-				}
-
-				// Validate IP.
-				if ( filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
-					return $ip;
-				}
-			}
-		}
-
-		// Fallback to REMOTE_ADDR even if it's a private IP (for local development).
-		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
-			return sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) );
-		}
-
-		return '';
-	}
-
-	/**
-	 * Get geo-location data for an IP address.
-	 *
-	 * @param string $ip_address IP address.
-	 * @return array
-	 */
-	public function get_geo_data( $ip_address ) {
-		// Placeholder - will be implemented in later prompts.
-		// This will use IP geolocation APIs like ip-api.com, ipstack, etc.
-		return array(
-			'country_code' => '',
-			'country_name' => '',
-			'region'       => '',
-			'city'         => '',
-		);
 	}
 
 	/**
