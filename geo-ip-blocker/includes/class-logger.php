@@ -151,6 +151,16 @@ class Geo_Blocker_Logger {
 
 		$table_name = $this->database->get_logs_table();
 
+		// Support new format with limit/offset.
+		if ( isset( $filters['limit'] ) ) {
+			$per_page = $filters['limit'];
+		}
+		if ( isset( $filters['offset'] ) ) {
+			$offset = $filters['offset'];
+		} else {
+			$offset = ( $page - 1 ) * $per_page;
+		}
+
 		// Build WHERE clause.
 		$where = '1=1';
 		$values = array();
@@ -190,30 +200,74 @@ class Geo_Blocker_Logger {
 			$values[] = '%' . $wpdb->esc_like( $filters['block_reason'] ) . '%';
 		}
 
-		// Calculate offset.
-		$offset = ( $page - 1 ) * $per_page;
+		// Build query.
+		if ( ! empty( $values ) ) {
+			$where = $wpdb->prepare( $where, $values );
+		}
+
+		// Get orderby and order.
+		$orderby = isset( $filters['orderby'] ) ? $filters['orderby'] : 'created_at';
+		$order   = isset( $filters['order'] ) ? $filters['order'] : 'DESC';
+
+		$query = "SELECT * FROM {$table_name} WHERE {$where} ORDER BY {$orderby} {$order} LIMIT %d OFFSET %d";
+		$results = $wpdb->get_results(
+			$wpdb->prepare( $query, $per_page, $offset )
+		);
+
+		return $results;
+	}
+
+	/**
+	 * Get logs count with filters.
+	 *
+	 * @param array $filters Filters to apply.
+	 * @return int
+	 */
+	public function get_logs_count( $filters = array() ) {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		// Build WHERE clause.
+		$where = '1=1';
+		$values = array();
+
+		// Filter by date range.
+		if ( ! empty( $filters['date_from'] ) ) {
+			$where .= ' AND created_at >= %s';
+			$values[] = gmdate( 'Y-m-d 00:00:00', strtotime( $filters['date_from'] ) );
+		}
+
+		if ( ! empty( $filters['date_to'] ) ) {
+			$where .= ' AND created_at <= %s';
+			$values[] = gmdate( 'Y-m-d 23:59:59', strtotime( $filters['date_to'] ) );
+		}
+
+		// Filter by country.
+		if ( ! empty( $filters['country_code'] ) ) {
+			$where .= ' AND country_code = %s';
+			$values[] = $filters['country_code'];
+		}
+
+		// Filter by IP.
+		if ( ! empty( $filters['ip_address'] ) ) {
+			$where .= ' AND ip_address LIKE %s';
+			$values[] = '%' . $wpdb->esc_like( $filters['ip_address'] ) . '%';
+		}
+
+		// Filter by block reason.
+		if ( ! empty( $filters['block_reason'] ) ) {
+			$where .= ' AND block_reason LIKE %s';
+			$values[] = '%' . $wpdb->esc_like( $filters['block_reason'] ) . '%';
+		}
 
 		// Build query.
 		if ( ! empty( $values ) ) {
 			$where = $wpdb->prepare( $where, $values );
 		}
 
-		$query = "SELECT * FROM {$table_name} WHERE {$where} ORDER BY created_at DESC LIMIT %d OFFSET %d";
-		$results = $wpdb->get_results(
-			$wpdb->prepare( $query, $per_page, $offset )
-		);
-
-		// Get total count for pagination.
 		$count_query = "SELECT COUNT(*) FROM {$table_name} WHERE {$where}";
-		$total = (int) $wpdb->get_var( $count_query );
-
-		return array(
-			'logs'       => $results,
-			'total'      => $total,
-			'page'       => $page,
-			'per_page'   => $per_page,
-			'total_pages' => ceil( $total / $per_page ),
-		);
+		return (int) $wpdb->get_var( $count_query );
 	}
 
 	/**
@@ -601,5 +655,124 @@ class Geo_Blocker_Logger {
 		$stats['this_month'] = $month_stats['total_blocks'];
 
 		return $stats;
+	}
+
+	/**
+	 * Get blocked countries with counts.
+	 *
+	 * @return array
+	 */
+	public function get_blocked_countries() {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$query = "SELECT country_code, COUNT(*) as count FROM {$table_name} WHERE country_code != '' GROUP BY country_code ORDER BY count DESC";
+
+		return $wpdb->get_results( $query );
+	}
+
+	/**
+	 * Get timeline data for charts.
+	 *
+	 * @param int $days Number of days.
+	 * @return array
+	 */
+	public function get_timeline_data( $days = 30 ) {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$query = $wpdb->prepare(
+			"SELECT DATE(created_at) as date, COUNT(*) as count FROM {$table_name} WHERE created_at >= %s GROUP BY DATE(created_at) ORDER BY date ASC",
+			gmdate( 'Y-m-d 00:00:00', strtotime( "-{$days} days" ) )
+		);
+
+		$results = $wpdb->get_results( $query );
+
+		$data = array(
+			'labels' => array(),
+			'values' => array(),
+		);
+
+		foreach ( $results as $row ) {
+			$data['labels'][] = $row->date;
+			$data['values'][] = (int) $row->count;
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Get top countries.
+	 *
+	 * @param int $limit Limit.
+	 * @return array
+	 */
+	public function get_top_countries( $limit = 10 ) {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$query = $wpdb->prepare(
+			"SELECT country_code, COUNT(*) as count FROM {$table_name} WHERE country_code != '' GROUP BY country_code ORDER BY count DESC LIMIT %d",
+			$limit
+		);
+
+		return $wpdb->get_results( $query );
+	}
+
+	/**
+	 * Get top IPs.
+	 *
+	 * @param int $limit Limit.
+	 * @return array
+	 */
+	public function get_top_ips( $limit = 10 ) {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$query = $wpdb->prepare(
+			"SELECT ip_address, COUNT(*) as count FROM {$table_name} WHERE ip_address != '' GROUP BY ip_address ORDER BY count DESC LIMIT %d",
+			$limit
+		);
+
+		return $wpdb->get_results( $query );
+	}
+
+	/**
+	 * Get block reasons statistics.
+	 *
+	 * @return array
+	 */
+	public function get_block_reasons_stats() {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$query = "SELECT block_reason, COUNT(*) as count FROM {$table_name} WHERE block_reason != '' GROUP BY block_reason ORDER BY count DESC";
+
+		return $wpdb->get_results( $query );
+	}
+
+	/**
+	 * Delete a single log entry.
+	 *
+	 * @param int $log_id Log ID.
+	 * @return bool
+	 */
+	public function delete_log( $log_id ) {
+		global $wpdb;
+
+		$table_name = $this->database->get_logs_table();
+
+		$result = $wpdb->delete(
+			$table_name,
+			array( 'id' => $log_id ),
+			array( '%d' )
+		);
+
+		return false !== $result;
 	}
 }

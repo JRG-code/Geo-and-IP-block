@@ -47,6 +47,11 @@ class Geo_IP_Blocker_Admin {
 		add_action( 'admin_menu', array( $this, 'add_menu_pages' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'plugin_action_links_' . GEO_IP_BLOCKER_PLUGIN_BASENAME, array( $this, 'add_action_links' ) );
+
+		// Logs page AJAX handlers.
+		add_action( 'wp_ajax_geo_ip_blocker_export_csv', array( $this, 'ajax_export_csv' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_clear_logs', array( $this, 'ajax_clear_logs' ) );
+		add_action( 'admin_post_geo_ip_blocker_cleanup_logs', array( $this, 'handle_cleanup_logs' ) );
 	}
 
 	/**
@@ -199,5 +204,135 @@ class Geo_IP_Blocker_Admin {
 		}
 
 		$this->settings_page->render();
+	}
+
+	/**
+	 * Handle AJAX CSV export.
+	 */
+	public function ajax_export_csv() {
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Verify nonce.
+		check_ajax_referer( 'geo-ip-blocker-admin', 'nonce' );
+
+		// Get filters.
+		$filters = array();
+		if ( ! empty( $_POST['filters'] ) ) {
+			$filters = json_decode( sanitize_text_field( wp_unslash( $_POST['filters'] ) ), true );
+		}
+
+		// Get logger.
+		$logger = geo_ip_blocker_get_logger();
+
+		// Export to CSV.
+		$filepath = $logger->export_logs( 'csv', $filters );
+
+		if ( false === $filepath ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to export logs.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Get download URL.
+		$upload_dir = wp_upload_dir();
+		$fileurl    = str_replace( $upload_dir['basedir'], $upload_dir['baseurl'], $filepath );
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'Logs exported successfully!', 'geo-ip-blocker' ),
+				'url'     => $fileurl,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX clear all logs.
+	 */
+	public function ajax_clear_logs() {
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Verify nonce.
+		check_ajax_referer( 'geo-ip-blocker-admin', 'nonce' );
+
+		// Get logger.
+		$logger = geo_ip_blocker_get_logger();
+
+		// Clear all logs.
+		$result = $logger->clear_all_logs();
+
+		if ( false === $result ) {
+			wp_send_json_error( array( 'message' => __( 'Failed to clear logs.', 'geo-ip-blocker' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'All logs have been cleared successfully!', 'geo-ip-blocker' ),
+			)
+		);
+	}
+
+	/**
+	 * Handle cleanup logs form submission.
+	 */
+	public function handle_cleanup_logs() {
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'You do not have permission to perform this action.', 'geo-ip-blocker' ) );
+		}
+
+		// Verify nonce.
+		if ( ! isset( $_POST['cleanup_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['cleanup_nonce'] ) ), 'geo_ip_blocker_cleanup_logs' ) ) {
+			wp_die( esc_html__( 'Security check failed.', 'geo-ip-blocker' ) );
+		}
+
+		$action = isset( $_POST['cleanup_action'] ) ? sanitize_text_field( wp_unslash( $_POST['cleanup_action'] ) ) : '';
+
+		if ( 'save_cleanup_settings' === $action ) {
+			// Save cleanup settings.
+			$settings = get_option( 'geo_ip_blocker_settings', array() );
+
+			$settings['log_retention_days'] = isset( $_POST['log_retention_days'] ) ? absint( $_POST['log_retention_days'] ) : 90;
+			$settings['max_logs']            = isset( $_POST['max_logs'] ) ? absint( $_POST['max_logs'] ) : 10000;
+			$settings['auto_cleanup_logs']   = ! empty( $_POST['auto_cleanup_logs'] );
+
+			update_option( 'geo_ip_blocker_settings', $settings );
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'    => 'geo-ip-blocker-logs',
+						'updated' => '1',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+
+		} elseif ( 'cleanup_now' === $action ) {
+			// Clean up logs now.
+			$retention_days = isset( $_POST['log_retention_days'] ) ? absint( $_POST['log_retention_days'] ) : 90;
+
+			$logger = geo_ip_blocker_get_logger();
+			$logger->delete_logs( $retention_days );
+			$logger->maybe_trim_logs();
+
+			wp_safe_redirect(
+				add_query_arg(
+					array(
+						'page'      => 'geo-ip-blocker-logs',
+						'cleanup' => '1',
+					),
+					admin_url( 'admin.php' )
+				)
+			);
+			exit;
+		}
+
+		wp_safe_redirect( admin_url( 'admin.php?page=geo-ip-blocker-logs' ) );
+		exit;
 	}
 }
