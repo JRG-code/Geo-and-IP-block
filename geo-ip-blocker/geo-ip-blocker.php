@@ -147,6 +147,7 @@ final class Geo_IP_Blocker {
 	 */
 	private function includes() {
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/functions.php';
+		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/country-regions.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-database.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-security.php';
 		require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-cache.php';
