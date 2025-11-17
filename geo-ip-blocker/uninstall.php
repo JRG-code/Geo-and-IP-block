@@ -1,47 +1,34 @@
 <?php
 /**
- * Uninstall script.
+ * Uninstall Handler
  *
  * Fired when the plugin is uninstalled.
  *
  * @package GeoIPBlocker
  */
 
-// Exit if accessed directly.
+// If uninstall not called from WordPress, exit.
 if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
-// Define plugin constants for uninstall.
-define( 'GEO_IP_BLOCKER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-
-// Include database class.
-require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'includes/class-database.php';
+global $wpdb;
 
 /**
- * Remove plugin data on uninstall.
+ * Delete plugin data based on user preference.
  */
-function geo_ip_blocker_uninstall() {
-	global $wpdb;
+$delete_data = get_option( 'geo_ip_blocker_delete_data_on_uninstall', true );
 
-	// Get option to check if we should delete data.
-	$delete_data = get_option( 'geo_ip_blocker_delete_data_on_uninstall', false );
-
-	if ( ! $delete_data ) {
-		// Don't delete data if option is not set.
-		return;
-	}
-
+if ( $delete_data ) {
 	// Delete database tables.
-	$database = new Geo_IP_Blocker_Database();
-	$database->drop_tables();
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}geo_ip_rules" );
+	$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}geo_ip_logs" );
 
-	// Delete options.
-	delete_option( 'geo_ip_blocker_version' );
-	delete_option( 'geo_ip_blocker_activated' );
-	delete_option( 'geo_ip_blocker_db_version' );
-	delete_option( 'geo_ip_blocker_db_last_update' );
+	// Delete all plugin options.
 	delete_option( 'geo_ip_blocker_settings' );
+	delete_option( 'geo_ip_blocker_version' );
+	delete_option( 'geo_ip_blocker_db_version' );
+	delete_option( 'geo_ip_blocker_activated' );
 	delete_option( 'geo_ip_blocker_delete_data_on_uninstall' );
 
 	// Delete IP lists.
@@ -49,11 +36,79 @@ function geo_ip_blocker_uninstall() {
 	delete_option( 'geo_blocker_ip_blacklist' );
 
 	// Delete transients.
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_geo_ip_blocker_%'" );
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_geo_ip_blocker_%'" );
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_geo_blocker_%'" );
-	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_geo_blocker_%'" );
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options}
+			WHERE option_name LIKE %s
+			OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_geo_ip_blocker_' ) . '%',
+			$wpdb->esc_like( '_transient_timeout_geo_ip_blocker_' ) . '%'
+		)
+	);
+
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options}
+			WHERE option_name LIKE %s
+			OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_geo_blocker_' ) . '%',
+			$wpdb->esc_like( '_transient_timeout_geo_blocker_' ) . '%'
+		)
+	);
+
+	// Delete rate limiter transients.
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->options}
+			WHERE option_name LIKE %s
+			OR option_name LIKE %s",
+			$wpdb->esc_like( '_transient_geo_ip_blocker_rate_' ) . '%',
+			$wpdb->esc_like( '_transient_timeout_geo_ip_blocker_rate_' ) . '%'
+		)
+	);
+
+	// Delete site-wide transients (multisite).
+	if ( is_multisite() ) {
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->sitemeta}
+				WHERE meta_key LIKE %s
+				OR meta_key LIKE %s",
+				$wpdb->esc_like( '_site_transient_geo_ip_blocker_' ) . '%',
+				$wpdb->esc_like( '_site_transient_timeout_geo_ip_blocker_' ) . '%'
+			)
+		);
+	}
+
+	// Clear object cache.
+	wp_cache_flush();
+
+	// Delete WooCommerce product meta.
+	if ( class_exists( 'WooCommerce' ) ) {
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->postmeta}
+				WHERE meta_key IN (%s, %s)",
+				'_geo_blocker_enabled',
+				'_geo_blocker_countries'
+			)
+		);
+	}
+
+	// Delete user meta (if any).
+	$wpdb->query(
+		$wpdb->prepare(
+			"DELETE FROM {$wpdb->usermeta}
+			WHERE meta_key LIKE %s",
+			$wpdb->esc_like( 'geo_ip_blocker_' ) . '%'
+		)
+	);
 }
 
-// Run uninstall.
-geo_ip_blocker_uninstall();
+// Clear scheduled events.
+wp_clear_scheduled_hook( 'geo_ip_blocker_cleanup_logs' );
+wp_clear_scheduled_hook( 'geo_ip_blocker_update_database' );
+wp_clear_scheduled_hook( 'geo_ip_blocker_update_geoip_db' );
+
+// Flush rewrite rules.
+flush_rewrite_rules();

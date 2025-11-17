@@ -116,6 +116,7 @@ final class Geo_IP_Blocker {
 		register_deactivation_hook( GEO_IP_BLOCKER_PLUGIN_FILE, array( $this, 'deactivate' ) );
 		add_action( 'plugins_loaded', array( $this, 'load_textdomain' ) );
 		add_action( 'plugins_loaded', array( $this, 'maybe_upgrade_database' ) );
+		add_action( 'plugins_loaded', array( $this, 'check_version' ) );
 		add_action( 'init', array( $this, 'check_requirements' ) );
 	}
 
@@ -189,6 +190,65 @@ final class Geo_IP_Blocker {
 		// Run upgrade.
 		if ( $this->database ) {
 			$this->database->upgrade_database();
+		}
+	}
+
+	/**
+	 * Check plugin version and run updates if necessary.
+	 *
+	 * Runs on plugins_loaded to ensure plugin is fully loaded.
+	 */
+	public function check_version() {
+		$current_version = get_option( 'geo_ip_blocker_version', '0.0.0' );
+
+		// If versions don't match, run updates.
+		if ( version_compare( $current_version, GEO_IP_BLOCKER_VERSION, '<' ) ) {
+			$this->run_updates( $current_version );
+			update_option( 'geo_ip_blocker_version', GEO_IP_BLOCKER_VERSION );
+
+			// Clear cache after update.
+			if ( function_exists( 'geo_ip_blocker_get_cache' ) ) {
+				$cache = geo_ip_blocker_get_cache();
+				$cache->flush();
+			}
+		}
+	}
+
+	/**
+	 * Run plugin updates for version changes.
+	 *
+	 * @param string $from_version Previous version.
+	 */
+	private function run_updates( $from_version ) {
+		// Example: Update from 0.x to 1.0.0.
+		if ( version_compare( $from_version, '1.0.0', '<' ) ) {
+			// Run any necessary data migrations for 1.0.0.
+			$this->update_to_1_0_0();
+		}
+
+		// Future versions can add their update methods here.
+		// Example:
+		// if ( version_compare( $from_version, '1.1.0', '<' ) ) {
+		//     $this->update_to_1_1_0();
+		// }
+
+		do_action( 'geo_ip_blocker_updated', $from_version, GEO_IP_BLOCKER_VERSION );
+	}
+
+	/**
+	 * Update to version 1.0.0.
+	 *
+	 * Initial release - no migrations needed.
+	 */
+	private function update_to_1_0_0() {
+		// Ensure database tables are up to date.
+		if ( $this->database ) {
+			$this->database->upgrade_database();
+		}
+
+		// Set activation timestamp if not set.
+		if ( ! get_option( 'geo_ip_blocker_activated' ) ) {
+			update_option( 'geo_ip_blocker_activated', time() );
 		}
 	}
 
