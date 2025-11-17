@@ -40,12 +40,19 @@ function geo_ip_blocker_uninstall() {
 	delete_option( 'geo_ip_blocker_version' );
 	delete_option( 'geo_ip_blocker_activated' );
 	delete_option( 'geo_ip_blocker_db_version' );
+	delete_option( 'geo_ip_blocker_db_last_update' );
 	delete_option( 'geo_ip_blocker_settings' );
 	delete_option( 'geo_ip_blocker_delete_data_on_uninstall' );
+
+	// Delete IP lists.
+	delete_option( 'geo_blocker_ip_whitelist' );
+	delete_option( 'geo_blocker_ip_blacklist' );
 
 	// Delete transients.
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_geo_ip_blocker_%'" );
 	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_geo_ip_blocker_%'" );
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_geo_blocker_%'" );
+	$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '_transient_timeout_geo_blocker_%'" );
 }
 
 // Run uninstall.

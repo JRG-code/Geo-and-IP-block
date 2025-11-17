@@ -222,37 +222,6 @@ function geo_ip_blocker_get_countries() {
 }
 
 /**
- * Validate IP address.
- *
- * @param string $ip IP address.
- * @return bool
- */
-function geo_ip_blocker_validate_ip( $ip ) {
-	return filter_var( $ip, FILTER_VALIDATE_IP ) !== false;
-}
-
-/**
- * Validate CIDR notation.
- *
- * @param string $cidr CIDR notation.
- * @return bool
- */
-function geo_ip_blocker_validate_cidr( $cidr ) {
-	if ( strpos( $cidr, '/' ) === false ) {
-		return false;
-	}
-
-	list( $ip, $mask ) = explode( '/', $cidr );
-
-	if ( ! geo_ip_blocker_validate_ip( $ip ) ) {
-		return false;
-	}
-
-	$mask = intval( $mask );
-	return $mask >= 0 && $mask <= 32;
-}
-
-/**
  * Format date for display.
  *
  * @param string $date Date string.
@@ -388,4 +357,171 @@ function geo_ip_blocker_has_local_database() {
  */
 function geo_ip_blocker_get_db_last_update() {
 	return get_option( 'geo_ip_blocker_db_last_update', false );
+}
+
+/**
+ * Get IP Manager instance.
+ *
+ * @return Geo_Blocker_IP_Manager
+ */
+function geo_ip_blocker_get_ip_manager() {
+	return new Geo_Blocker_IP_Manager();
+}
+
+/**
+ * Validate IP address.
+ *
+ * @param string $ip            IP address.
+ * @param bool   $allow_private Whether to allow private IPs.
+ * @return bool True if valid, false otherwise.
+ */
+function geo_ip_blocker_validate_ip( $ip, $allow_private = true ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->validate_ip( $ip, $allow_private );
+}
+
+/**
+ * Validate IP range (CIDR or hyphen format).
+ *
+ * @param string $range Range to validate.
+ * @return bool|string False if invalid, normalized format if valid.
+ */
+function geo_ip_blocker_validate_range( $range ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->validate_range( $range );
+}
+
+/**
+ * Check if IP is blocked.
+ *
+ * @param string $ip IP address.
+ * @return bool True if blocked, false otherwise.
+ */
+function geo_ip_blocker_is_ip_blocked( $ip ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->is_ip_blocked( $ip );
+}
+
+/**
+ * Check if IP is in whitelist.
+ *
+ * @param string $ip IP address.
+ * @return bool True if whitelisted, false otherwise.
+ */
+function geo_ip_blocker_is_ip_whitelisted( $ip ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->is_ip_allowed( $ip );
+}
+
+/**
+ * Add IP to whitelist or blacklist.
+ *
+ * @param string $ip        IP address or range.
+ * @param string $list_type List type ('whitelist' or 'blacklist').
+ * @return bool|WP_Error True on success, WP_Error on failure.
+ */
+function geo_ip_blocker_add_ip( $ip, $list_type = 'blacklist' ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->add_ip_to_list( $ip, $list_type );
+}
+
+/**
+ * Remove IP from whitelist or blacklist.
+ *
+ * @param string $ip        IP address or range.
+ * @param string $list_type List type ('whitelist' or 'blacklist').
+ * @return bool|WP_Error True on success, WP_Error on failure.
+ */
+function geo_ip_blocker_remove_ip( $ip, $list_type = 'blacklist' ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->remove_ip_from_list( $ip, $list_type );
+}
+
+/**
+ * Get IP list.
+ *
+ * @param string $list_type List type ('whitelist' or 'blacklist').
+ * @return array List of IPs.
+ */
+function geo_ip_blocker_get_ip_list( $list_type = 'blacklist' ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->get_list( $list_type );
+}
+
+/**
+ * Clear IP list.
+ *
+ * @param string $list_type List type ('whitelist' or 'blacklist').
+ * @return bool True on success, false on failure.
+ */
+function geo_ip_blocker_clear_ip_list( $list_type ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->clear_list( $list_type );
+}
+
+/**
+ * Get IP list count.
+ *
+ * @param string $list_type List type ('whitelist' or 'blacklist').
+ * @return int Number of entries in list.
+ */
+function geo_ip_blocker_get_ip_count( $list_type = 'blacklist' ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->get_list_count( $list_type );
+}
+
+/**
+ * Check if IP is in CIDR range.
+ *
+ * @param string $ip   IP address.
+ * @param string $cidr CIDR notation.
+ * @return bool True if in range, false otherwise.
+ */
+function geo_ip_blocker_ip_in_cidr( $ip, $cidr ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->is_ip_in_cidr( $ip, $cidr );
+}
+
+/**
+ * Check if IP is in hyphen range.
+ *
+ * @param string $ip    IP address.
+ * @param string $range Range in hyphen format.
+ * @return bool True if in range, false otherwise.
+ */
+function geo_ip_blocker_ip_in_range( $ip, $range ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->is_ip_in_hyphen_range( $ip, $range );
+}
+
+/**
+ * Parse CIDR notation.
+ *
+ * @param string $cidr CIDR notation.
+ * @return array|false Range info or false.
+ */
+function geo_ip_blocker_parse_cidr( $cidr ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->parse_cidr( $cidr );
+}
+
+/**
+ * Check if IP is private/reserved.
+ *
+ * @param string $ip IP address.
+ * @return bool True if private, false otherwise.
+ */
+function geo_ip_blocker_is_private_ip( $ip ) {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->is_private_ip( $ip );
+}
+
+/**
+ * Get IP management statistics.
+ *
+ * @return array Statistics array.
+ */
+function geo_ip_blocker_get_ip_stats() {
+	$manager = geo_ip_blocker_get_ip_manager();
+	return $manager->get_statistics();
 }

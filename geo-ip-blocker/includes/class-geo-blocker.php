@@ -32,11 +32,19 @@ class Geo_IP_Blocker_Handler {
 	private $geolocation;
 
 	/**
+	 * IP Manager instance.
+	 *
+	 * @var Geo_Blocker_IP_Manager
+	 */
+	private $ip_manager;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		$this->database    = new Geo_IP_Blocker_Database();
 		$this->geolocation = new Geo_Blocker_Geolocation();
+		$this->ip_manager  = new Geo_Blocker_IP_Manager();
 		$this->init_hooks();
 	}
 
@@ -63,10 +71,21 @@ class Geo_IP_Blocker_Handler {
 			return;
 		}
 
+		// Check IP whitelist first (whitelist overrides everything).
+		if ( $this->ip_manager->is_ip_allowed( $ip_address ) ) {
+			return;
+		}
+
+		// Check IP blacklist.
+		if ( $this->ip_manager->is_ip_blocked( $ip_address ) ) {
+			$this->block_access( $ip_address, array(), 'IP blacklist' );
+			return;
+		}
+
 		// Get geo data using geolocation class.
 		$geo_data = $this->geolocation->get_location_data( $ip_address );
 
-		// Check blocking rules.
+		// Check geo blocking rules.
 		if ( $this->should_block( $ip_address, $geo_data ) ) {
 			$this->block_access( $ip_address, $geo_data );
 		}
@@ -171,10 +190,15 @@ class Geo_IP_Blocker_Handler {
 	/**
 	 * Block access and log the attempt.
 	 *
-	 * @param string $ip_address IP address.
-	 * @param array  $geo_data Geo data.
+	 * @param string $ip_address   IP address.
+	 * @param array  $geo_data     Geo data.
+	 * @param string $block_reason Optional. Reason for blocking.
 	 */
-	private function block_access( $ip_address, $geo_data ) {
+	private function block_access( $ip_address, $geo_data = array(), $block_reason = '' ) {
+		if ( empty( $block_reason ) ) {
+			$block_reason = 'Geo/IP blocking rule matched';
+		}
+
 		// Log the block attempt.
 		$this->database->add_log(
 			array(
@@ -184,7 +208,7 @@ class Geo_IP_Blocker_Handler {
 				'city'         => isset( $geo_data['city'] ) ? $geo_data['city'] : '',
 				'blocked_url'  => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '',
 				'user_agent'   => isset( $_SERVER['HTTP_USER_AGENT'] ) ? sanitize_text_field( wp_unslash( $_SERVER['HTTP_USER_AGENT'] ) ) : '',
-				'block_reason' => 'Geo/IP blocking rule matched',
+				'block_reason' => $block_reason,
 			)
 		);
 
