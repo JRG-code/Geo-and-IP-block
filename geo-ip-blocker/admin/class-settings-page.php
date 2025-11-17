@@ -68,6 +68,16 @@ class Geo_IP_Blocker_Settings_Page {
 			'allowed_countries'    => array(),
 			'blocked_regions'      => array(),
 
+			// IP Blocking - uses existing IP manager options.
+			// (ip_whitelist and ip_blacklist are managed separately via geo_blocker_ip_whitelist and geo_blocker_ip_blacklist options).
+
+			// Exceptions.
+			'exempt_roles'         => array( 'administrator' ),
+			'exempt_users'         => array(),
+			'exempt_pages'         => array(),
+			'allow_login_page'     => true,
+			'allow_admin_area'     => true,
+
 			// Logging.
 			'enable_logging'       => true,
 			'max_logs'             => 10000,
@@ -85,6 +95,15 @@ class Geo_IP_Blocker_Settings_Page {
 		add_action( 'wp_ajax_geo_ip_blocker_test_api', array( $this, 'ajax_test_api' ) );
 		add_action( 'wp_ajax_geo_ip_blocker_update_database', array( $this, 'ajax_update_database' ) );
 		add_action( 'wp_ajax_geo_ip_blocker_get_regions', array( $this, 'ajax_get_regions' ) );
+
+		// IP Management AJAX handlers.
+		add_action( 'wp_ajax_geo_ip_blocker_add_ip', array( $this, 'ajax_add_ip' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_remove_ip', array( $this, 'ajax_remove_ip' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_get_current_ip', array( $this, 'ajax_get_current_ip' ) );
+
+		// Exceptions AJAX handlers.
+		add_action( 'wp_ajax_geo_ip_blocker_search_users', array( $this, 'ajax_search_users' ) );
+		add_action( 'wp_ajax_geo_ip_blocker_search_pages', array( $this, 'ajax_search_pages' ) );
 	}
 
 	/**
@@ -134,6 +153,15 @@ class Geo_IP_Blocker_Settings_Page {
 		$sanitized['blocked_countries']    = is_array( $input['blocked_countries'] ) ? array_map( 'sanitize_text_field', $input['blocked_countries'] ) : array();
 		$sanitized['allowed_countries']    = is_array( $input['allowed_countries'] ) ? array_map( 'sanitize_text_field', $input['allowed_countries'] ) : array();
 		$sanitized['blocked_regions']      = is_array( $input['blocked_regions'] ) ? array_map( 'sanitize_text_field', $input['blocked_regions'] ) : array();
+
+		// IP Blocking - IPs are managed separately via IP Manager class.
+
+		// Exceptions.
+		$sanitized['exempt_roles']         = isset( $input['exempt_roles'] ) && is_array( $input['exempt_roles'] ) ? array_map( 'sanitize_text_field', $input['exempt_roles'] ) : array();
+		$sanitized['exempt_users']         = isset( $input['exempt_users'] ) && is_array( $input['exempt_users'] ) ? array_map( 'absint', $input['exempt_users'] ) : array();
+		$sanitized['exempt_pages']         = isset( $input['exempt_pages'] ) && is_array( $input['exempt_pages'] ) ? array_map( 'absint', $input['exempt_pages'] ) : array();
+		$sanitized['allow_login_page']     = ! empty( $input['allow_login_page'] );
+		$sanitized['allow_admin_area']     = ! empty( $input['allow_admin_area'] );
 
 		// Logging.
 		$sanitized['enable_logging']       = ! empty( $input['enable_logging'] );
@@ -206,6 +234,14 @@ class Geo_IP_Blocker_Settings_Page {
 					'updateSuccess'    => __( 'Database updated successfully!', 'geo-ip-blocker' ),
 					'updateFailed'     => __( 'Database update failed. Please try again.', 'geo-ip-blocker' ),
 					'confirmClear'     => __( 'Are you sure you want to clear all selections?', 'geo-ip-blocker' ),
+					'selectCountries'  => __( 'Select countries...', 'geo-ip-blocker' ),
+					'noCountries'      => __( 'No countries selected.', 'geo-ip-blocker' ),
+					'invalidIP'        => __( 'Invalid IP address or format.', 'geo-ip-blocker' ),
+					'ipAdded'          => __( 'IP address added successfully!', 'geo-ip-blocker' ),
+					'ipRemoved'        => __( 'IP address removed successfully!', 'geo-ip-blocker' ),
+					'confirmRemoveIP'  => __( 'Are you sure you want to remove this IP?', 'geo-ip-blocker' ),
+					'searchUsers'      => __( 'Search users...', 'geo-ip-blocker' ),
+					'searchPages'      => __( 'Search pages...', 'geo-ip-blocker' ),
 				),
 			)
 		);
@@ -227,7 +263,7 @@ class Geo_IP_Blocker_Settings_Page {
 	public function render() {
 		$settings     = $this->get_settings();
 		$active_tab   = isset( $_GET['tab'] ) ? sanitize_text_field( wp_unslash( $_GET['tab'] ) ) : 'general';
-		$allowed_tabs = array( 'general', 'api', 'countries', 'logging' );
+		$allowed_tabs = array( 'general', 'api', 'countries', 'ip_blocking', 'exceptions', 'logging' );
 
 		if ( ! in_array( $active_tab, $allowed_tabs, true ) ) {
 			$active_tab = 'general';
@@ -246,6 +282,12 @@ class Geo_IP_Blocker_Settings_Page {
 				</a>
 				<a href="?page=geo-ip-blocker-settings&tab=countries" class="nav-tab <?php echo 'countries' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Country Blocking', 'geo-ip-blocker' ); ?>
+				</a>
+				<a href="?page=geo-ip-blocker-settings&tab=ip_blocking" class="nav-tab <?php echo 'ip_blocking' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'IP Blocking', 'geo-ip-blocker' ); ?>
+				</a>
+				<a href="?page=geo-ip-blocker-settings&tab=exceptions" class="nav-tab <?php echo 'exceptions' === $active_tab ? 'nav-tab-active' : ''; ?>">
+					<?php esc_html_e( 'Exceptions', 'geo-ip-blocker' ); ?>
 				</a>
 				<a href="?page=geo-ip-blocker-settings&tab=logging" class="nav-tab <?php echo 'logging' === $active_tab ? 'nav-tab-active' : ''; ?>">
 					<?php esc_html_e( 'Logging', 'geo-ip-blocker' ); ?>
@@ -266,6 +308,12 @@ class Geo_IP_Blocker_Settings_Page {
 							break;
 						case 'countries':
 							$this->render_countries_tab( $settings );
+							break;
+						case 'ip_blocking':
+							$this->render_ip_blocking_tab( $settings );
+							break;
+						case 'exceptions':
+							$this->render_exceptions_tab( $settings );
 							break;
 						case 'logging':
 							$this->render_logging_tab( $settings );
@@ -823,5 +871,381 @@ class Geo_IP_Blocker_Settings_Page {
 		// This would require additional implementation to get regions per country.
 		// For now, return empty array.
 		wp_send_json_success( array( 'regions' => array() ) );
+	}
+
+	/**
+	 * Render IP Blocking tab.
+	 *
+	 * @param array $settings Current settings.
+	 */
+	private function render_ip_blocking_tab( $settings ) {
+		$ip_manager    = geo_ip_blocker_get_ip_manager();
+		$ip_whitelist  = $ip_manager ? $ip_manager->get_whitelist() : array();
+		$ip_blacklist  = $ip_manager ? $ip_manager->get_blacklist() : array();
+		$geolocation   = geo_ip_blocker_get_geolocation();
+		$current_ip    = $geolocation ? $geolocation->get_visitor_ip() : '';
+		?>
+		<div class="geo-ip-blocker-ip-section">
+			<!-- Blacklist Section -->
+			<div class="ip-list-section">
+				<h3><?php esc_html_e( 'Blocked IPs (Blacklist)', 'geo-ip-blocker' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Add IP addresses to block from accessing your site. Supports individual IPs, CIDR notation (192.168.1.0/24), and ranges (192.168.1.1-192.168.1.50).', 'geo-ip-blocker' ); ?>
+				</p>
+
+				<div class="ip-add-form">
+					<input type="text" id="blacklist-ip-input" class="regular-text" placeholder="<?php esc_attr_e( '192.168.1.100 or 10.0.0.0/24 or 172.16.0.1-172.16.0.50', 'geo-ip-blocker' ); ?>">
+					<button type="button" class="button button-secondary" data-list-type="blacklist" data-action="add-ip">
+						<?php esc_html_e( 'Add to Blacklist', 'geo-ip-blocker' ); ?>
+					</button>
+					<span class="spinner"></span>
+					<span class="ip-message"></span>
+				</div>
+
+				<div class="ip-list-container" data-list-type="blacklist">
+					<div class="ip-list-header">
+						<input type="text" class="ip-search" placeholder="<?php esc_attr_e( 'Search IPs...', 'geo-ip-blocker' ); ?>">
+						<span class="ip-count"><?php printf( esc_html__( '%d IPs', 'geo-ip-blocker' ), count( $ip_blacklist ) ); ?></span>
+					</div>
+					<div class="ip-list">
+						<?php if ( ! empty( $ip_blacklist ) ) : ?>
+							<?php foreach ( $ip_blacklist as $ip ) : ?>
+								<div class="ip-item" data-ip="<?php echo esc_attr( $ip ); ?>">
+									<span class="ip-address"><?php echo esc_html( $ip ); ?></span>
+									<button type="button" class="button button-link-delete remove-ip" data-list-type="blacklist" data-ip="<?php echo esc_attr( $ip ); ?>">
+										<?php esc_html_e( 'Remove', 'geo-ip-blocker' ); ?>
+									</button>
+								</div>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<p class="no-ips"><?php esc_html_e( 'No IPs in blacklist.', 'geo-ip-blocker' ); ?></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+
+			<!-- Whitelist Section -->
+			<div class="ip-list-section">
+				<h3><?php esc_html_e( 'Allowed IPs (Whitelist)', 'geo-ip-blocker' ); ?></h3>
+				<p class="description">
+					<?php esc_html_e( 'Add IP addresses to always allow access, regardless of other blocking rules. Whitelist takes priority over all other rules.', 'geo-ip-blocker' ); ?>
+				</p>
+
+				<div class="ip-add-form">
+					<input type="text" id="whitelist-ip-input" class="regular-text" placeholder="<?php esc_attr_e( '192.168.1.100 or 10.0.0.0/24 or 172.16.0.1-172.16.0.50', 'geo-ip-blocker' ); ?>">
+					<button type="button" class="button button-secondary" data-list-type="whitelist" data-action="add-ip">
+						<?php esc_html_e( 'Add to Whitelist', 'geo-ip-blocker' ); ?>
+					</button>
+					<?php if ( $current_ip ) : ?>
+						<button type="button" class="button button-secondary add-current-ip" data-list-type="whitelist" data-ip="<?php echo esc_attr( $current_ip ); ?>">
+							<?php printf( esc_html__( 'Add My IP (%s)', 'geo-ip-blocker' ), esc_html( $current_ip ) ); ?>
+						</button>
+					<?php endif; ?>
+					<span class="spinner"></span>
+					<span class="ip-message"></span>
+				</div>
+
+				<div class="ip-list-container" data-list-type="whitelist">
+					<div class="ip-list-header">
+						<input type="text" class="ip-search" placeholder="<?php esc_attr_e( 'Search IPs...', 'geo-ip-blocker' ); ?>">
+						<span class="ip-count"><?php printf( esc_html__( '%d IPs', 'geo-ip-blocker' ), count( $ip_whitelist ) ); ?></span>
+					</div>
+					<div class="ip-list">
+						<?php if ( ! empty( $ip_whitelist ) ) : ?>
+							<?php foreach ( $ip_whitelist as $ip ) : ?>
+								<div class="ip-item" data-ip="<?php echo esc_attr( $ip ); ?>">
+									<span class="ip-address"><?php echo esc_html( $ip ); ?></span>
+									<button type="button" class="button button-link-delete remove-ip" data-list-type="whitelist" data-ip="<?php echo esc_attr( $ip ); ?>">
+										<?php esc_html_e( 'Remove', 'geo-ip-blocker' ); ?>
+									</button>
+								</div>
+							<?php endforeach; ?>
+						<?php else : ?>
+							<p class="no-ips"><?php esc_html_e( 'No IPs in whitelist.', 'geo-ip-blocker' ); ?></p>
+						<?php endif; ?>
+					</div>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Render Exceptions tab.
+	 *
+	 * @param array $settings Current settings.
+	 */
+	private function render_exceptions_tab( $settings ) {
+		global $wp_roles;
+
+		$all_roles     = $wp_roles->roles;
+		$exempt_roles  = isset( $settings['exempt_roles'] ) ? $settings['exempt_roles'] : array();
+		$exempt_users  = isset( $settings['exempt_users'] ) ? $settings['exempt_users'] : array();
+		$exempt_pages  = isset( $settings['exempt_pages'] ) ? $settings['exempt_pages'] : array();
+		?>
+		<div class="geo-ip-blocker-exceptions-section">
+			<table class="form-table">
+				<!-- User Roles -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Exempt User Roles', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<fieldset>
+							<legend class="screen-reader-text"><?php esc_html_e( 'Select user roles to exempt from blocking', 'geo-ip-blocker' ); ?></legend>
+							<?php foreach ( $all_roles as $role_slug => $role_data ) : ?>
+								<label>
+									<input type="checkbox" name="settings[exempt_roles][]" value="<?php echo esc_attr( $role_slug ); ?>" <?php checked( in_array( $role_slug, $exempt_roles, true ) ); ?>>
+									<?php echo esc_html( translate_user_role( $role_data['name'] ) ); ?>
+								</label>
+								<br>
+							<?php endforeach; ?>
+						</fieldset>
+						<p class="description"><?php esc_html_e( 'Users with these roles will always be allowed access, regardless of their location or IP address.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Specific Users -->
+				<tr>
+					<th scope="row">
+						<label for="exempt-users-select"><?php esc_html_e( 'Exempt Specific Users', 'geo-ip-blocker' ); ?></label>
+					</th>
+					<td>
+						<select name="settings[exempt_users][]" id="exempt-users-select" class="geo-ip-blocker-users-select" multiple="multiple" style="width: 100%; max-width: 500px;">
+							<?php
+							if ( ! empty( $exempt_users ) ) {
+								foreach ( $exempt_users as $user_id ) {
+									$user = get_user_by( 'id', $user_id );
+									if ( $user ) {
+										printf(
+											'<option value="%d" selected>%s (%s)</option>',
+											esc_attr( $user_id ),
+											esc_html( $user->display_name ),
+											esc_html( $user->user_email )
+										);
+									}
+								}
+							}
+							?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Search and select specific users to exempt from blocking.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Specific Pages -->
+				<tr>
+					<th scope="row">
+						<label for="exempt-pages-select"><?php esc_html_e( 'Exempt Specific Pages', 'geo-ip-blocker' ); ?></label>
+					</th>
+					<td>
+						<select name="settings[exempt_pages][]" id="exempt-pages-select" class="geo-ip-blocker-pages-select" multiple="multiple" style="width: 100%; max-width: 500px;">
+							<?php
+							if ( ! empty( $exempt_pages ) ) {
+								foreach ( $exempt_pages as $page_id ) {
+									$page = get_post( $page_id );
+									if ( $page ) {
+										printf(
+											'<option value="%d" selected>%s</option>',
+											esc_attr( $page_id ),
+											esc_html( $page->post_title )
+										);
+									}
+								}
+							}
+							?>
+						</select>
+						<p class="description"><?php esc_html_e( 'Search and select specific pages/posts to exempt from blocking.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+
+				<!-- Special Options -->
+				<tr>
+					<th scope="row">
+						<?php esc_html_e( 'Special Access Options', 'geo-ip-blocker' ); ?>
+					</th>
+					<td>
+						<label>
+							<input type="checkbox" name="settings[allow_login_page]" value="1" <?php checked( $settings['allow_login_page'], true ); ?>>
+							<?php esc_html_e( 'Always allow access to login page (wp-login.php)', 'geo-ip-blocker' ); ?>
+						</label>
+						<br>
+						<label>
+							<input type="checkbox" name="settings[allow_admin_area]" value="1" <?php checked( $settings['allow_admin_area'], true ); ?>>
+							<?php esc_html_e( 'Always allow access to admin area (wp-admin)', 'geo-ip-blocker' ); ?>
+						</label>
+						<p class="description"><?php esc_html_e( 'Configure special access rules for critical WordPress areas.', 'geo-ip-blocker' ); ?></p>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Handle AJAX add IP.
+	 */
+	public function ajax_add_ip() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$ip        = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_text_field( wp_unslash( $_POST['list_type'] ) ) : '';
+
+		if ( empty( $ip ) || ! in_array( $list_type, array( 'whitelist', 'blacklist' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Use IP manager to add IP.
+		$result = geo_ip_blocker_add_ip( $ip, $list_type );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'IP address added successfully!', 'geo-ip-blocker' ),
+				'ip'      => $ip,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX remove IP.
+	 */
+	public function ajax_remove_ip() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$ip        = isset( $_POST['ip'] ) ? sanitize_text_field( wp_unslash( $_POST['ip'] ) ) : '';
+		$list_type = isset( $_POST['list_type'] ) ? sanitize_text_field( wp_unslash( $_POST['list_type'] ) ) : '';
+
+		if ( empty( $ip ) || ! in_array( $list_type, array( 'whitelist', 'blacklist' ), true ) ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid parameters.', 'geo-ip-blocker' ) ) );
+		}
+
+		// Use IP manager to remove IP.
+		$result = geo_ip_blocker_remove_ip( $ip, $list_type );
+
+		if ( is_wp_error( $result ) ) {
+			wp_send_json_error( array( 'message' => $result->get_error_message() ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'message' => __( 'IP address removed successfully!', 'geo-ip-blocker' ),
+				'ip'      => $ip,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX get current IP.
+	 */
+	public function ajax_get_current_ip() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$current_ip = geo_ip_blocker_get_current_ip();
+
+		if ( empty( $current_ip ) ) {
+			wp_send_json_error( array( 'message' => __( 'Could not detect your IP address.', 'geo-ip-blocker' ) ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'ip' => $current_ip,
+			)
+		);
+	}
+
+	/**
+	 * Handle AJAX search users.
+	 */
+	public function ajax_search_users() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$search = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+
+		if ( strlen( $search ) < 2 ) {
+			wp_send_json_success( array( 'results' => array() ) );
+		}
+
+		$users = get_users(
+			array(
+				'search'         => '*' . $search . '*',
+				'search_columns' => array( 'user_login', 'user_email', 'display_name' ),
+				'number'         => 20,
+			)
+		);
+
+		$results = array();
+		foreach ( $users as $user ) {
+			$results[] = array(
+				'id'   => $user->ID,
+				'text' => sprintf( '%s (%s)', $user->display_name, $user->user_email ),
+			);
+		}
+
+		wp_send_json_success( array( 'results' => $results ) );
+	}
+
+	/**
+	 * Handle AJAX search pages.
+	 */
+	public function ajax_search_pages() {
+		// Verify nonce.
+		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
+
+		// Check permissions.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'geo-ip-blocker' ) ) );
+		}
+
+		$search = isset( $_GET['q'] ) ? sanitize_text_field( wp_unslash( $_GET['q'] ) ) : '';
+
+		if ( strlen( $search ) < 2 ) {
+			wp_send_json_success( array( 'results' => array() ) );
+		}
+
+		$pages = get_posts(
+			array(
+				's'              => $search,
+				'post_type'      => array( 'page', 'post' ),
+				'post_status'    => 'publish',
+				'posts_per_page' => 20,
+			)
+		);
+
+		$results = array();
+		foreach ( $pages as $page ) {
+			$results[] = array(
+				'id'   => $page->ID,
+				'text' => sprintf( '%s (%s)', $page->post_title, get_post_type( $page->ID ) ),
+			);
+		}
+
+		wp_send_json_success( array( 'results' => $results ) );
 	}
 }

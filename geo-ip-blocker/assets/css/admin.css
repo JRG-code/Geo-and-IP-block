@@ -290,3 +290,195 @@
 .geo-ip-blocker-settings label input[type="radio"] {
 	margin-right: 6px;
 }
+
+/* IP Blocking Tab */
+.geo-ip-blocker-ip-section {
+	margin-top: 20px;
+}
+
+.ip-list-section {
+	margin-bottom: 40px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #dcdcde;
+	border-radius: 4px;
+}
+
+.ip-list-section h3 {
+	margin-top: 0;
+	margin-bottom: 10px;
+	color: #1d2327;
+}
+
+.ip-list-section .description {
+	margin-bottom: 20px;
+	padding: 12px;
+	background: #f0f6fc;
+	border-left: 4px solid #2271b1;
+	font-size: 13px;
+}
+
+.ip-add-form {
+	margin-bottom: 20px;
+	padding-bottom: 20px;
+	border-bottom: 1px solid #dcdcde;
+}
+
+.ip-add-form input[type="text"] {
+	margin-right: 10px;
+	max-width: 400px;
+}
+
+.ip-add-form .button {
+	margin-right: 10px;
+}
+
+.ip-add-form .spinner {
+	float: none;
+	margin: 0 10px 0 0;
+	vertical-align: middle;
+}
+
+.ip-add-form .ip-message {
+	display: inline-block;
+	margin-left: 10px;
+	vertical-align: middle;
+}
+
+.ip-add-form .ip-message .success {
+	color: #00a32a;
+	font-weight: 600;
+}
+
+.ip-add-form .ip-message .error {
+	color: #d63638;
+	font-weight: 600;
+}
+
+.ip-list-container {
+	margin-top: 20px;
+}
+
+.ip-list-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 15px;
+	padding: 10px;
+	background: #f6f7f7;
+	border: 1px solid #dcdcde;
+	border-radius: 4px 4px 0 0;
+}
+
+.ip-list-header .ip-search {
+	flex: 1;
+	max-width: 300px;
+	margin: 0;
+}
+
+.ip-list-header .ip-count {
+	font-weight: 600;
+	color: #646970;
+}
+
+.ip-list {
+	max-height: 400px;
+	overflow-y: auto;
+	border: 1px solid #dcdcde;
+	border-top: none;
+	border-radius: 0 0 4px 4px;
+}
+
+.ip-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 12px 15px;
+	border-bottom: 1px solid #f0f0f1;
+	transition: background-color 0.2s;
+}
+
+.ip-item:last-child {
+	border-bottom: none;
+}
+
+.ip-item:hover {
+	background-color: #f6f7f7;
+}
+
+.ip-item .ip-address {
+	font-family: 'Courier New', Courier, monospace;
+	font-size: 13px;
+	color: #1d2327;
+}
+
+.ip-item .remove-ip {
+	color: #d63638;
+	text-decoration: none;
+}
+
+.ip-item .remove-ip:hover {
+	color: #b32d2e;
+}
+
+.no-ips {
+	padding: 20px;
+	text-align: center;
+	color: #646970;
+	font-style: italic;
+	margin: 0;
+}
+
+/* Exceptions Tab */
+.geo-ip-blocker-exceptions-section {
+	margin-top: 20px;
+}
+
+.geo-ip-blocker-exceptions-section fieldset {
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+.geo-ip-blocker-exceptions-section fieldset label {
+	display: block;
+	margin-bottom: 10px;
+}
+
+.geo-ip-blocker-exceptions-section fieldset label input[type="checkbox"] {
+	margin-right: 8px;
+}
+
+/* Responsive for IP and Exceptions tabs */
+@media screen and (max-width: 782px) {
+	.ip-list-header {
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.ip-list-header .ip-search {
+		max-width: 100%;
+	}
+
+	.ip-add-form input[type="text"] {
+		display: block;
+		margin-bottom: 10px;
+		max-width: 100%;
+	}
+
+	.ip-add-form .button {
+		display: block;
+		margin-bottom: 10px;
+		width: 100%;
+	}
+
+	.ip-item {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+	}
+
+	.ip-item .remove-ip {
+		align-self: flex-end;
+	}
+}

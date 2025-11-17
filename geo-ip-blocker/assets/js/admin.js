@@ -21,6 +21,8 @@
 			this.initUpdateDatabaseButton();
 			this.initCountryActions();
 			this.initCountryTags();
+			this.initIPManagement();
+			this.initExceptionsManagement();
 		},
 
 		/**
@@ -364,6 +366,258 @@
 
 				$select.val(newValues).trigger('change');
 			});
+		},
+
+		/**
+		 * Initialize IP Management
+		 */
+		initIPManagement: function () {
+			// Add IP button handler
+			$(document).on('click', '[data-action="add-ip"]', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const listType = $button.data('list-type');
+				const $input = $('#' + listType + '-ip-input');
+				const ip = $input.val().trim();
+				const $spinner = $button.siblings('.spinner');
+				const $message = $button.siblings('.ip-message');
+
+				if (!ip) {
+					return;
+				}
+
+				// Validate IP format
+				if (!SettingsPage.validateIPFormat(ip)) {
+					$message.html('<span class="error">' + geoIPBlockerSettings.strings.invalidIP + '</span>');
+					setTimeout(function () {
+						$message.html('');
+					}, 3000);
+					return;
+				}
+
+				// Show spinner
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+				$message.html('');
+
+				// Send AJAX request
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_add_ip',
+						nonce: geoIPBlockerSettings.nonce,
+						ip: ip,
+						list_type: listType
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$message.html('<span class="success">' + (response.data.message || geoIPBlockerSettings.strings.ipAdded) + '</span>');
+							$input.val('');
+
+							// Add IP to list
+							SettingsPage.addIPToList(ip, listType);
+
+							setTimeout(function () {
+								$message.html('');
+							}, 3000);
+						} else {
+							$message.html('<span class="error">' + (response.data.message || geoIPBlockerSettings.strings.error) + '</span>');
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						$message.html('<span class="error">' + geoIPBlockerSettings.strings.error + '</span>');
+					}
+				});
+			});
+
+			// Remove IP button handler
+			$(document).on('click', '.remove-ip', function (e) {
+				e.preventDefault();
+
+				if (!confirm(geoIPBlockerSettings.strings.confirmRemoveIP)) {
+					return;
+				}
+
+				const $button = $(this);
+				const listType = $button.data('list-type');
+				const ip = $button.data('ip');
+
+				// Send AJAX request
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_remove_ip',
+						nonce: geoIPBlockerSettings.nonce,
+						ip: ip,
+						list_type: listType
+					},
+					success: function (response) {
+						if (response.success) {
+							// Remove IP from list
+							$button.closest('.ip-item').fadeOut(300, function () {
+								$(this).remove();
+								SettingsPage.updateIPCount(listType);
+
+								// Check if list is empty
+								const $list = $('.ip-list-container[data-list-type="' + listType + '"] .ip-list');
+								if ($list.find('.ip-item').length === 0) {
+									$list.html('<p class="no-ips">' + (listType === 'blacklist' ? 'No IPs in blacklist.' : 'No IPs in whitelist.') + '</p>');
+								}
+							});
+						} else {
+							alert(response.data.message || geoIPBlockerSettings.strings.error);
+						}
+					},
+					error: function () {
+						alert(geoIPBlockerSettings.strings.error);
+					}
+				});
+			});
+
+			// Add current IP button handler
+			$(document).on('click', '.add-current-ip', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const listType = $button.data('list-type');
+				const ip = $button.data('ip');
+				const $input = $('#' + listType + '-ip-input');
+
+				$input.val(ip);
+				$button.siblings('[data-action="add-ip"]').click();
+			});
+
+			// IP search functionality
+			$(document).on('keyup', '.ip-search', function () {
+				const searchTerm = $(this).val().toLowerCase();
+				const $container = $(this).closest('.ip-list-container');
+				const $items = $container.find('.ip-item');
+
+				$items.each(function () {
+					const ip = $(this).data('ip').toLowerCase();
+					if (ip.indexOf(searchTerm) > -1) {
+						$(this).show();
+					} else {
+						$(this).hide();
+					}
+				});
+			});
+		},
+
+		/**
+		 * Validate IP format (IP, CIDR, or range)
+		 */
+		validateIPFormat: function (ip) {
+			// IPv4 pattern
+			const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+			// CIDR pattern
+			const cidrPattern = /^(\d{1,3}\.){3}\d{1,3}\/\d{1,2}$/;
+			// Range pattern
+			const rangePattern = /^(\d{1,3}\.){3}\d{1,3}-(\d{1,3}\.){3}\d{1,3}$/;
+			// IPv6 pattern (simplified)
+			const ipv6Pattern = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+
+			return ipv4Pattern.test(ip) || cidrPattern.test(ip) || rangePattern.test(ip) || ipv6Pattern.test(ip);
+		},
+
+		/**
+		 * Add IP to list visually
+		 */
+		addIPToList: function (ip, listType) {
+			const $list = $('.ip-list-container[data-list-type="' + listType + '"] .ip-list');
+			const $noIps = $list.find('.no-ips');
+
+			if ($noIps.length) {
+				$noIps.remove();
+			}
+
+			const $ipItem = $('<div class="ip-item" data-ip="' + ip + '">' +
+				'<span class="ip-address">' + ip + '</span>' +
+				'<button type="button" class="button button-link-delete remove-ip" data-list-type="' + listType + '" data-ip="' + ip + '">Remove</button>' +
+				'</div>');
+
+			$list.prepend($ipItem);
+			$ipItem.hide().fadeIn(300);
+
+			SettingsPage.updateIPCount(listType);
+		},
+
+		/**
+		 * Update IP count
+		 */
+		updateIPCount: function (listType) {
+			const $container = $('.ip-list-container[data-list-type="' + listType + '"]');
+			const count = $container.find('.ip-item').length;
+			$container.find('.ip-count').text(count + ' IPs');
+		},
+
+		/**
+		 * Initialize Exceptions Management
+		 */
+		initExceptionsManagement: function () {
+			// Initialize Select2 for users
+			if (typeof $.fn.select2 !== 'undefined' && $('.geo-ip-blocker-users-select').length) {
+				$('.geo-ip-blocker-users-select').select2({
+					placeholder: geoIPBlockerSettings.strings.searchUsers || 'Search users...',
+					allowClear: true,
+					width: '100%',
+					ajax: {
+						url: geoIPBlockerSettings.ajaxUrl,
+						dataType: 'json',
+						delay: 250,
+						data: function (params) {
+							return {
+								q: params.term,
+								action: 'geo_ip_blocker_search_users',
+								nonce: geoIPBlockerSettings.nonce
+							};
+						},
+						processResults: function (data) {
+							return {
+								results: data.data.results
+							};
+						},
+						cache: true
+					},
+					minimumInputLength: 2
+				});
+			}
+
+			// Initialize Select2 for pages
+			if (typeof $.fn.select2 !== 'undefined' && $('.geo-ip-blocker-pages-select').length) {
+				$('.geo-ip-blocker-pages-select').select2({
+					placeholder: geoIPBlockerSettings.strings.searchPages || 'Search pages...',
+					allowClear: true,
+					width: '100%',
+					ajax: {
+						url: geoIPBlockerSettings.ajaxUrl,
+						dataType: 'json',
+						delay: 250,
+						data: function (params) {
+							return {
+								q: params.term,
+								action: 'geo_ip_blocker_search_pages',
+								nonce: geoIPBlockerSettings.nonce
+							};
+						},
+						processResults: function (data) {
+							return {
+								results: data.data.results
+							};
+						},
+						cache: true
+					},
+					minimumInputLength: 2
+				});
+			}
 		}
 	};
 
