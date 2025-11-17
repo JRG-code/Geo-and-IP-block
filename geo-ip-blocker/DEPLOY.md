@@ -110,13 +110,28 @@ geo-ip-blocker/
 
 ### Creating Distribution ZIP
 
+**IMPORTANT**: The plugin includes automatic update checking from GitHub. You must include the `vendor/` folder in your distribution package.
+
+#### Prerequisites
+
+```bash
+# Navigate to plugin directory
+cd geo-ip-blocker/
+
+# Install production dependencies (includes Plugin Update Checker)
+composer install --no-dev --optimize-autoloader
+
+# Verify vendor folder was created
+ls -la vendor/yahnis-elsts/plugin-update-checker/
+```
+
 #### Manual Method
 
 ```bash
-# Navigate to plugins directory
-cd wp-content/plugins/
+# Navigate to plugins parent directory
+cd /path/to/
 
-# Create ZIP excluding development files
+# Create ZIP INCLUDING vendor folder
 zip -r geo-ip-blocker-1.0.0.zip geo-ip-blocker/ \
     -x "*.git*" \
     -x "*node_modules/*" \
@@ -128,6 +143,9 @@ zip -r geo-ip-blocker-1.0.0.zip geo-ip-blocker/ \
     -x "*package.json" \
     -x "*package-lock.json" \
     -x "*.gitignore"
+
+# Verify vendor is included
+unzip -l geo-ip-blocker-1.0.0.zip | grep "vendor/yahnis-elsts"
 ```
 
 #### Using Script
@@ -142,23 +160,44 @@ PLUGIN_SLUG="geo-ip-blocker"
 BUILD_DIR="build"
 ZIP_NAME="${PLUGIN_SLUG}-${VERSION}.zip"
 
+echo "📦 Building ${PLUGIN_SLUG} v${VERSION}..."
+
+# Install dependencies
+echo "Installing production dependencies..."
+composer install --no-dev --optimize-autoloader
+
+# Verify vendor exists
+if [ ! -d "vendor/yahnis-elsts/plugin-update-checker" ]; then
+    echo "❌ Error: Plugin Update Checker not found in vendor/"
+    exit 1
+fi
+
 # Create build directory
 mkdir -p ${BUILD_DIR}
 
-# Copy plugin files
+# Copy plugin files (INCLUDING vendor)
+echo "Copying files..."
 rsync -av \
     --exclude='.git*' \
     --exclude='node_modules' \
     --exclude='tests' \
     --exclude='.DS_Store' \
     --exclude='phpunit.xml*' \
-    --exclude='composer.*' \
+    --exclude='composer.json' \
+    --exclude='composer.lock' \
     --exclude='package*.json' \
     --exclude='build' \
     --exclude='*.zip' \
     ./ ${BUILD_DIR}/${PLUGIN_SLUG}/
 
+# Verify vendor was copied
+if [ ! -d "${BUILD_DIR}/${PLUGIN_SLUG}/vendor" ]; then
+    echo "❌ Error: vendor folder not copied to build"
+    exit 1
+fi
+
 # Create ZIP
+echo "Creating ZIP..."
 cd ${BUILD_DIR}
 zip -r ../${ZIP_NAME} ${PLUGIN_SLUG}/
 cd ..
@@ -166,7 +205,16 @@ cd ..
 # Cleanup
 rm -rf ${BUILD_DIR}
 
-echo "✅ Build complete: ${ZIP_NAME}"
+# Verify ZIP contents
+echo "Verifying ZIP contents..."
+if unzip -l ${ZIP_NAME} | grep -q "vendor/yahnis-elsts"; then
+    echo "✅ Build complete: ${ZIP_NAME}"
+    echo "✅ Plugin Update Checker included"
+    ls -lh ${ZIP_NAME}
+else
+    echo "❌ Warning: Plugin Update Checker not found in ZIP"
+    exit 1
+fi
 ```
 
 Make executable and run:
