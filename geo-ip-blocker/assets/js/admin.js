@@ -622,12 +622,547 @@
 	};
 
 	/**
+	 * Tools Tab Handler
+	 */
+	const ToolsTab = {
+		init: function () {
+			this.initIPLocationTest();
+			this.initDatabaseActions();
+			this.initSettingsImportExport();
+			this.initDebugTools();
+		},
+
+		/**
+		 * Initialize IP Location Test
+		 */
+		initIPLocationTest: function () {
+			// Detect My Location button
+			$('#detect-my-location-button').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $results = $('#my-location-results');
+
+				// Show spinner
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+
+				// Get current IP from button context
+				const currentIP = $button.closest('td').find('strong').text().trim();
+
+				// Send AJAX request
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_test_ip_location',
+						nonce: geoIPBlockerSettings.nonce,
+						ip: currentIP
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success && response.data.data) {
+							const data = response.data.data;
+							$('#my-result-country').text((data.country_name || 'N/A') + ' (' + (data.country_code || 'N/A') + ')');
+							$('#my-result-region').text(data.region || 'N/A');
+							$('#my-result-city').text(data.city || 'N/A');
+							$('#my-result-isp').text(data.isp || 'N/A');
+
+							// Determine blocking status (simplified - would need backend logic)
+							const status = data.is_blocked ? '✗ Bloqueado' : '✓ Permitido';
+							const statusClass = data.is_blocked ? 'error' : 'success';
+							$('#my-result-status').html('<span class="' + statusClass + '">' + status + '</span>');
+
+							if (data.block_reason) {
+								$('#my-result-reason').text(data.block_reason);
+								$('#my-result-reason-row').show();
+							} else {
+								$('#my-result-reason-row').hide();
+							}
+
+							$results.slideDown();
+						} else {
+							alert(response.data.message || 'Erro ao detectar localização');
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						alert('Erro ao detectar localização');
+					}
+				});
+			});
+
+			// Test Other IP button
+			$('#test-other-ip-button').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $input = $('#test-other-ip-input');
+				const $spinner = $button.siblings('.spinner');
+				const $results = $('#other-ip-results');
+				const ip = $input.val().trim();
+
+				if (!ip) {
+					alert('Por favor, digite um endereço IP');
+					return;
+				}
+
+				// Show spinner
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+
+				// Send AJAX request
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_test_ip_location',
+						nonce: geoIPBlockerSettings.nonce,
+						ip: ip
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success && response.data.data) {
+							const data = response.data.data;
+							$('#other-result-ip').text(ip);
+							$('#other-result-country').text((data.country_name || 'N/A') + ' (' + (data.country_code || 'N/A') + ')');
+							$('#other-result-region').text(data.region || 'N/A');
+							$('#other-result-city').text(data.city || 'N/A');
+							$('#other-result-isp').text(data.isp || 'N/A');
+
+							const status = data.is_blocked ? '✗ Bloqueado' : '✓ Permitido';
+							const statusClass = data.is_blocked ? 'error' : 'success';
+							$('#other-result-status').html('<span class="' + statusClass + '">' + status + '</span>');
+
+							if (data.block_reason) {
+								$('#other-result-reason').text(data.block_reason);
+								$('#other-result-reason-row').show();
+							} else {
+								$('#other-result-reason-row').hide();
+							}
+
+							$results.slideDown();
+						} else {
+							alert(response.data.message || 'Erro ao testar IP');
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						alert('Erro ao testar IP');
+					}
+				});
+			});
+		},
+
+		/**
+		 * Initialize Database Actions
+		 */
+		initDatabaseActions: function () {
+			// Update GeoIP Database
+			$('#update-geoip-database').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $result = $('#database-action-result');
+
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+				$result.hide();
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_update_database',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$result.removeClass('notice-error').addClass('notice-success');
+							$result.find('p').text(response.data.message || 'Database atualizado com sucesso!');
+							$result.slideDown();
+
+							// Reload after 2 seconds
+							setTimeout(function () {
+								location.reload();
+							}, 2000);
+						} else {
+							$result.removeClass('notice-success').addClass('notice-error');
+							$result.find('p').text(response.data.message || 'Erro ao atualizar database');
+							$result.slideDown();
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						$result.removeClass('notice-success').addClass('notice-error');
+						$result.find('p').text('Erro ao atualizar database');
+						$result.slideDown();
+					}
+				});
+			});
+
+			// Clear GeoIP Cache
+			$('#clear-geoip-cache').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $result = $('#database-action-result');
+
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+				$result.hide();
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_clear_cache',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$result.removeClass('notice-error').addClass('notice-success');
+							$result.find('p').text(response.data.message || 'Cache limpo com sucesso!');
+							$result.slideDown();
+
+							setTimeout(function () {
+								$result.slideUp();
+							}, 3000);
+						} else {
+							$result.removeClass('notice-success').addClass('notice-error');
+							$result.find('p').text(response.data.message || 'Erro ao limpar cache');
+							$result.slideDown();
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						$result.removeClass('notice-success').addClass('notice-error');
+						$result.find('p').text('Erro ao limpar cache');
+						$result.slideDown();
+					}
+				});
+			});
+		},
+
+		/**
+		 * Initialize Settings Import/Export
+		 */
+		initSettingsImportExport: function () {
+			// Export Settings
+			$('#export-settings-button').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_export_settings',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						if (response.success && response.data.data) {
+							// Create download link
+							const blob = new Blob([response.data.data], { type: 'application/json' });
+							const url = window.URL.createObjectURL(blob);
+							const a = document.createElement('a');
+							a.href = url;
+							a.download = response.data.filename || 'geo-ip-blocker-settings.json';
+							document.body.appendChild(a);
+							a.click();
+							window.URL.revokeObjectURL(url);
+							document.body.removeChild(a);
+						} else {
+							alert('Erro ao exportar configurações');
+						}
+					},
+					error: function () {
+						alert('Erro ao exportar configurações');
+					}
+				});
+			});
+
+			// Import Settings
+			$('#import-settings-button').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $fileInput = $('#import-settings-file');
+				const $spinner = $button.siblings('.spinner');
+				const $result = $('#import-result');
+				const file = $fileInput[0].files[0];
+
+				if (!file) {
+					alert('Por favor, selecione um arquivo');
+					return;
+				}
+
+				if (!confirm('Isso sobrescreverá as configurações atuais. Deseja continuar?')) {
+					return;
+				}
+
+				const reader = new FileReader();
+				reader.onload = function (e) {
+					const contents = e.target.result;
+
+					$spinner.addClass('is-active');
+					$button.prop('disabled', true);
+					$result.hide();
+
+					$.ajax({
+						url: geoIPBlockerSettings.ajaxUrl,
+						type: 'POST',
+						data: {
+							action: 'geo_ip_blocker_import_settings',
+							nonce: geoIPBlockerSettings.nonce,
+							settings_data: contents
+						},
+						success: function (response) {
+							$spinner.removeClass('is-active');
+							$button.prop('disabled', false);
+
+							if (response.success) {
+								$result.removeClass('notice-error').addClass('notice-success');
+								$result.find('p').text(response.data.message || 'Configurações importadas com sucesso!');
+								$result.slideDown();
+
+								// Reload after 2 seconds
+								setTimeout(function () {
+									location.reload();
+								}, 2000);
+							} else {
+								$result.removeClass('notice-success').addClass('notice-error');
+								$result.find('p').text(response.data.message || 'Erro ao importar configurações');
+								$result.slideDown();
+							}
+						},
+						error: function () {
+							$spinner.removeClass('is-active');
+							$button.prop('disabled', false);
+							$result.removeClass('notice-success').addClass('notice-error');
+							$result.find('p').text('Erro ao importar configurações');
+							$result.slideDown();
+						}
+					});
+				};
+
+				reader.readAsText(file);
+			});
+
+			// Reset Settings
+			$('#reset-settings-button').on('click', function (e) {
+				e.preventDefault();
+
+				if (!confirm('Isso resetará todas as configurações para os valores padrão. Esta ação não pode ser desfeita. Deseja continuar?')) {
+					return;
+				}
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $result = $('#reset-result');
+
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+				$result.hide();
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_reset_settings',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$result.removeClass('notice-error').addClass('notice-success');
+							$result.find('p').text(response.data.message || 'Configurações resetadas com sucesso!');
+							$result.slideDown();
+
+							// Reload after 2 seconds
+							setTimeout(function () {
+								location.reload();
+							}, 2000);
+						} else {
+							$result.removeClass('notice-success').addClass('notice-error');
+							$result.find('p').text(response.data.message || 'Erro ao resetar configurações');
+							$result.slideDown();
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						$result.removeClass('notice-success').addClass('notice-error');
+						$result.find('p').text('Erro ao resetar configurações');
+						$result.slideDown();
+					}
+				});
+			});
+		},
+
+		/**
+		 * Initialize Debug Tools
+		 */
+		initDebugTools: function () {
+			// Copy System Info
+			$('#copy-system-info').on('click', function (e) {
+				e.preventDefault();
+
+				const $table = $(this).siblings('table');
+				let text = 'Geo & IP Blocker - System Information\n\n';
+
+				$table.find('tr').each(function () {
+					const label = $(this).find('th').text();
+					const value = $(this).find('td').text();
+					text += label + ' ' + value + '\n';
+				});
+
+				// Copy to clipboard
+				if (navigator.clipboard && navigator.clipboard.writeText) {
+					navigator.clipboard.writeText(text).then(function () {
+						alert('Informações do sistema copiadas para a área de transferência!');
+					}).catch(function () {
+						ToolsTab.fallbackCopyToClipboard(text);
+					});
+				} else {
+					ToolsTab.fallbackCopyToClipboard(text);
+				}
+			});
+
+			// View Debug Log
+			$('#view-debug-log').on('click', function (e) {
+				e.preventDefault();
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $viewer = $('#debug-log-viewer');
+
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_view_debug_log',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$viewer.find('textarea').val(response.data.content || 'Log vazio');
+							$viewer.slideDown();
+						} else {
+							alert(response.data.message || 'Erro ao visualizar log');
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						alert('Erro ao visualizar log');
+					}
+				});
+			});
+
+			// Clear Debug Log
+			$('#clear-debug-log').on('click', function (e) {
+				e.preventDefault();
+
+				if (!confirm('Deseja limpar o log de debug?')) {
+					return;
+				}
+
+				const $button = $(this);
+				const $spinner = $button.siblings('.spinner');
+				const $viewer = $('#debug-log-viewer');
+
+				$spinner.addClass('is-active');
+				$button.prop('disabled', true);
+
+				$.ajax({
+					url: geoIPBlockerSettings.ajaxUrl,
+					type: 'POST',
+					data: {
+						action: 'geo_ip_blocker_clear_debug_log',
+						nonce: geoIPBlockerSettings.nonce
+					},
+					success: function (response) {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+
+						if (response.success) {
+							$viewer.find('textarea').val('');
+							$viewer.slideUp();
+							alert(response.data.message || 'Log limpo com sucesso!');
+						} else {
+							alert(response.data.message || 'Erro ao limpar log');
+						}
+					},
+					error: function () {
+						$spinner.removeClass('is-active');
+						$button.prop('disabled', false);
+						alert('Erro ao limpar log');
+					}
+				});
+			});
+		},
+
+		/**
+		 * Fallback copy to clipboard for older browsers
+		 */
+		fallbackCopyToClipboard: function (text) {
+			const textArea = document.createElement('textarea');
+			textArea.value = text;
+			textArea.style.position = 'fixed';
+			textArea.style.left = '-999999px';
+			document.body.appendChild(textArea);
+			textArea.select();
+
+			try {
+				document.execCommand('copy');
+				alert('Informações do sistema copiadas para a área de transferência!');
+			} catch (err) {
+				alert('Erro ao copiar para a área de transferência');
+			}
+
+			document.body.removeChild(textArea);
+		}
+	};
+
+	/**
 	 * Initialize when DOM is ready
 	 */
 	$(document).ready(function () {
 		// Initialize settings page if on settings page
 		if ($('.geo-ip-blocker-settings').length) {
 			SettingsPage.init();
+		}
+
+		// Initialize tools tab if on tools tab
+		if ($('.geo-ip-blocker-tools-section').length) {
+			ToolsTab.init();
 		}
 	});
 
