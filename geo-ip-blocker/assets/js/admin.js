@@ -150,23 +150,28 @@
 
 				// Prepare form data
 				const formData = new FormData($form[0]);
-				formData.append('action', 'geo_ip_blocker_save_settings');
-				formData.append('nonce', geoIPBlockerSettings.nonce);
 
 				// Convert FormData to object for AJAX
-				const data = {};
+				const settings = {};
 				formData.forEach((value, key) => {
 					// Handle arrays (like country selections)
 					if (key.includes('[]')) {
 						const arrayKey = key.replace('[]', '');
-						if (!data[arrayKey]) {
-							data[arrayKey] = [];
+						if (!settings[arrayKey]) {
+							settings[arrayKey] = [];
 						}
-						data[arrayKey].push(value);
+						settings[arrayKey].push(value);
 					} else {
-						data[key] = value;
+						settings[key] = value;
 					}
 				});
+
+				// Prepare final data object with settings nested correctly
+				const data = {
+					action: 'geo_ip_blocker_save_settings',
+					nonce: geoIPBlockerSettings.nonce,
+					settings: settings
+				};
 
 				// Send AJAX request
 				$.ajax({
