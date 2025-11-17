@@ -30,6 +30,28 @@ define( 'GEO_IP_BLOCKER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GEO_IP_BLOCKER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'GEO_IP_BLOCKER_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+// Load Composer autoloader if available.
+if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
+	require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/autoload.php';
+}
+
+// Initialize Plugin Update Checker.
+if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php' ) ) {
+	require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php';
+
+	$geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/JRG-code/Geo-and-IP-block',
+		__FILE__,
+		'geo-ip-blocker'
+	);
+
+	// Set the branch to check for updates.
+	$geo_ip_blocker_update_checker->setBranch( 'main' );
+
+	// Optional: Set authentication if repository is private.
+	// $geo_ip_blocker_update_checker->setAuthentication( 'your-github-token' );
+}
+
 /**
  * Autoloader for plugin classes.
  *
