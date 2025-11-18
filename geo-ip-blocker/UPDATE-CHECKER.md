@@ -1,10 +1,68 @@
 # Plugin Update Checker - Setup Guide
 
-The plugin now includes automatic update checking from GitHub.
+## ⚠️ IMPORTANT: Update Checker Disabled
 
-## How It Works
+**The built-in update checker has been disabled to avoid conflicts with external plugin management systems.**
 
-The plugin automatically checks for updates from your GitHub repository every 12 hours. When a new version is available, WordPress will show an update notification just like any other plugin.
+If you're using an external plugin update manager (like WP Pusher, GitHub Updater, etc.), the plugin will work with that system automatically using the standard WordPress plugin headers.
+
+## Managed Externally
+
+This plugin's updates should be managed by your external update management system. The plugin includes all necessary WordPress standard headers:
+
+- Plugin Name
+- Version
+- Author
+- Plugin URI
+- Requires at least
+- Requires PHP
+
+Your external update manager will use these headers to manage updates.
+
+## Re-enabling Built-in Update Checker (Optional)
+
+If you want to use the built-in GitHub update checker instead of an external system:
+
+1. **Ensure plugin-update-checker library is present**:
+   ```bash
+   # The library should be in:
+   geo-ip-blocker/plugin-update-checker/
+   ```
+
+2. **Uncomment the code in geo-ip-blocker.php**:
+
+   Find these lines (around line 47):
+   ```php
+   /**
+    * if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php' ) ) {
+    *     require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
+    *     $geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+    *         'https://github.com/JRG-code/Geo-and-IP-block',
+    *         __FILE__,
+    *         'geo-ip-blocker'
+    *     );
+    *     $geo_ip_blocker_update_checker->setBranch( 'main' );
+    * }
+    */
+   ```
+
+   Uncomment by removing the `*` characters:
+   ```php
+   if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php' ) ) {
+       require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
+       $geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+           'https://github.com/JRG-code/Geo-and-IP-block',
+           __FILE__,
+           'geo-ip-blocker'
+       );
+       $geo_ip_blocker_update_checker->setBranch( 'main' );
+   }
+   ```
+
+3. **Test the update checker**:
+   - Go to WordPress Dashboard → Updates
+   - Click "Check Again"
+   - Updates should now check from GitHub
 
 ## For Plugin Users (Installing from ZIP)
 
