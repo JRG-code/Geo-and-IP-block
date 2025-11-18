@@ -854,6 +854,14 @@ class Geo_IP_Blocker_Settings_Page {
 	 * Handle AJAX settings save.
 	 */
 	public function ajax_save_settings() {
+		// TEMPORARY DEBUG LOGGING - Remove after debugging
+		$debug_log_file = GEO_IP_BLOCKER_PLUGIN_DIR . 'debug-save.log';
+		$debug_data = array(
+			'timestamp' => date( 'Y-m-d H:i:s' ),
+			'post_data' => $_POST,
+			'settings_received' => isset( $_POST['settings'] ) ? 'YES' : 'NO',
+		);
+
 		// Verify nonce.
 		check_ajax_referer( 'geo_ip_blocker_settings_nonce', 'nonce' );
 
@@ -868,14 +876,32 @@ class Geo_IP_Blocker_Settings_Page {
 		// Get new settings from POST.
 		$new_settings = isset( $_POST['settings'] ) ? wp_unslash( $_POST['settings'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
+		// DEBUG: Log what we received
+		$debug_data['new_settings_count'] = count( $new_settings );
+		$debug_data['new_settings_keys'] = array_keys( $new_settings );
+		$debug_data['existing_settings_count'] = count( $existing_settings );
+
 		// Merge new settings with existing ones to preserve values from other tabs.
 		$merged_settings = array_merge( $existing_settings, $new_settings );
+
+		// DEBUG: Log merged
+		$debug_data['merged_settings_count'] = count( $merged_settings );
 
 		// Sanitize merged settings.
 		$sanitized = $this->sanitize_settings( $merged_settings );
 
+		// DEBUG: Log sanitized
+		$debug_data['sanitized_count'] = count( $sanitized );
+
 		// Save settings.
-		update_option( $this->option_name, $sanitized );
+		$result = update_option( $this->option_name, $sanitized );
+
+		// DEBUG: Log result
+		$debug_data['update_result'] = $result ? 'SUCCESS' : 'FAILED';
+		$debug_data['saved_value'] = get_option( $this->option_name );
+
+		// Write debug log
+		file_put_contents( $debug_log_file, print_r( $debug_data, true ) . "\n\n", FILE_APPEND );
 
 		wp_send_json_success( array( 'message' => __( 'Settings saved successfully!', 'geo-ip-blocker' ) ) );
 	}

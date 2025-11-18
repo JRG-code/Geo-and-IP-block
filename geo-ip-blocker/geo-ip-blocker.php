@@ -35,22 +35,25 @@ if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 	require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/autoload.php';
 }
 
-// Initialize Plugin Update Checker.
-if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php' ) ) {
-	require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/yahnis-elsts/plugin-update-checker/plugin-update-checker.php';
-
-	$geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-		'https://github.com/JRG-code/Geo-and-IP-block',
-		__FILE__,
-		'geo-ip-blocker'
-	);
-
-	// Set the branch to check for updates.
-	$geo_ip_blocker_update_checker->setBranch( 'main' );
-
-	// Optional: Set authentication if repository is private.
-	// $geo_ip_blocker_update_checker->setAuthentication( 'your-github-token' );
-}
+/**
+ * Plugin Update Checker - Handled Externally
+ *
+ * The plugin update checker should be configured externally via your
+ * plugin management system. The built-in update checker has been disabled
+ * to avoid conflicts with external update management.
+ *
+ * If you need to re-enable the built-in update checker, uncomment the code below:
+ *
+ * if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php' ) ) {
+ *     require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
+ *     $geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+ *         'https://github.com/JRG-code/Geo-and-IP-block',
+ *         __FILE__,
+ *         'geo-ip-blocker'
+ *     );
+ *     $geo_ip_blocker_update_checker->setBranch( 'main' );
+ * }
+ */
 
 /**
  * Autoloader for plugin classes.
