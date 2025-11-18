@@ -18,6 +18,8 @@ debug-save.log
 
 # Debug/Diagnostic files (temporary)
 debug-settings.php
+quick-diagnostic.php
+force-cache-bust.php
 DIAGNOSTIC-INSTRUCTIONS.md
 
 # OS
