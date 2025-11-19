@@ -67,7 +67,7 @@ class Geo_Blocker_Blocker {
 		}
 
 		// Check if blocking is enabled.
-		if ( ! geo_ip_blocker_get_setting( 'enable_blocking', true ) ) {
+		if ( ! geo_ip_blocker_get_setting( 'enabled', true ) ) {
 			return;
 		}
 
@@ -156,14 +156,14 @@ class Geo_Blocker_Blocker {
 
 		// 3. Country Whitelist mode.
 		if ( 'whitelist' === $blocking_mode ) {
-			$whitelist_countries = geo_ip_blocker_get_setting( 'whitelist_countries', array() );
-			return ! in_array( $country, $whitelist_countries, true );
+			$allowed_countries = geo_ip_blocker_get_setting( 'allowed_countries', array() );
+			return ! in_array( $country, $allowed_countries, true );
 		}
 
 		// 4. Country Blacklist mode.
 		if ( 'blacklist' === $blocking_mode ) {
-			$blacklist_countries = geo_ip_blocker_get_setting( 'blacklist_countries', array() );
-			return in_array( $country, $blacklist_countries, true );
+			$blocked_countries = geo_ip_blocker_get_setting( 'blocked_countries', array() );
+			return in_array( $country, $blocked_countries, true );
 		}
 
 		// 5. Check database rules (for advanced rules).
@@ -239,7 +239,7 @@ class Geo_Blocker_Blocker {
 		}
 
 		// Check exempted roles.
-		$exempted_roles = geo_ip_blocker_get_setting( 'exempted_roles', array() );
+		$exempted_roles = geo_ip_blocker_get_setting( 'exempt_roles', array() );
 		if ( ! empty( $exempted_roles ) && is_user_logged_in() ) {
 			$user = wp_get_current_user();
 			foreach ( $exempted_roles as $role ) {
@@ -250,7 +250,7 @@ class Geo_Blocker_Blocker {
 		}
 
 		// Check exempted user IDs.
-		$exempted_users = geo_ip_blocker_get_setting( 'exempted_users', array() );
+		$exempted_users = geo_ip_blocker_get_setting( 'exempt_users', array() );
 		if ( ! empty( $exempted_users ) && is_user_logged_in() ) {
 			$user_id = get_current_user_id();
 			if ( in_array( $user_id, $exempted_users, true ) ) {
@@ -270,7 +270,7 @@ class Geo_Blocker_Blocker {
 		global $post;
 
 		// Check exempted pages/posts.
-		$exempted_pages = geo_ip_blocker_get_setting( 'exempted_pages', array() );
+		$exempted_pages = geo_ip_blocker_get_setting( 'exempt_pages', array() );
 		if ( ! empty( $exempted_pages ) && is_singular() && $post ) {
 			if ( in_array( $post->ID, $exempted_pages, true ) ) {
 				return true;
@@ -291,7 +291,7 @@ class Geo_Blocker_Blocker {
 
 		// Check WooCommerce specific exemptions.
 		if ( $this->is_woocommerce_active() ) {
-			$woo_blocking_mode = geo_ip_blocker_get_setting( 'woo_blocking_mode', 'all' );
+			$woo_blocking_mode = geo_ip_blocker_get_setting( 'woocommerce_mode', 'all' );
 
 			// If mode is 'none', exempt all WooCommerce pages.
 			if ( 'none' === $woo_blocking_mode && $this->is_woocommerce_page() ) {
