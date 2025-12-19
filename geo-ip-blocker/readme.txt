@@ -4,7 +4,7 @@ Tags: geolocation, ip-blocker, woocommerce, security, country-blocker, geo-block
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 7.4
-Stable tag: 1.0.1
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -146,6 +146,15 @@ Yes, edit any product and you'll find a "Geo Restrictions" metabox where you can
 
 == Changelog ==
 
+= 1.0.6 - 2025-01-19 =
+* Fixed: Critical setting name mismatches that prevented blocking functionality from working
+* Fixed: Whitelist mode now properly allows only selected countries
+* Fixed: Blacklist mode now properly blocks selected countries
+* Fixed: User/role/page exemptions now work correctly
+* Fixed: WooCommerce integration now uses correct setting names
+* Added: WooCommerce Cart and Checkout Blocks compatibility declaration
+* Improved: Enhanced WooCommerce feature compatibility declarations
+
 = 1.0.1 - 2025-01-17 =
 * Fixed: Settings persistence issue - settings now properly saved across all tabs
 * Fixed: Settings data structure - JavaScript now sends data in correct format expected by PHP
@@ -170,6 +179,9 @@ Yes, edit any product and you'll find a "Geo Restrictions" metabox where you can
 * Complete documentation
 
 == Upgrade Notice ==
+
+= 1.0.6 =
+CRITICAL UPDATE: Fixes blocking functionality that was completely broken. Whitelist/blacklist now work properly. Update immediately!
 
 = 1.0.1 =
 Critical bug fix for settings persistence. Update recommended for all users.
