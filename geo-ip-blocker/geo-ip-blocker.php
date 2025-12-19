@@ -3,7 +3,7 @@
  * Plugin Name: Geo & IP Blocker for WooCommerce
  * Plugin URI: https://github.com/JRG-code/Geo-and-IP-block
  * Description: Block access by country, region or IP address
- * Version: 1.0.5
+ * Version: 1.0.6
  * Author: JRG Code
  * Author URI: https://github.com/JRG-code
  * Requires PHP: 7.4
@@ -24,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'GEO_IP_BLOCKER_VERSION', '1.0.5' );
+define( 'GEO_IP_BLOCKER_VERSION', '1.0.6' );
 define( 'GEO_IP_BLOCKER_PLUGIN_FILE', __FILE__ );
 define( 'GEO_IP_BLOCKER_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'GEO_IP_BLOCKER_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -206,14 +206,23 @@ final class Geo_IP_Blocker {
 	/**
 	 * Declare WooCommerce HPOS compatibility.
 	 *
-	 * Declares compatibility with WooCommerce High-Performance Order Storage (HPOS).
+	 * Declares compatibility with WooCommerce High-Performance Order Storage (HPOS)
+	 * and other WooCommerce features.
 	 *
 	 * @since 1.0.1
 	 */
 	public function declare_woocommerce_compatibility() {
 		if ( class_exists( '\Automattic\WooCommerce\Utilities\FeaturesUtil' ) ) {
+			// Declare HPOS compatibility.
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
 				'custom_order_tables',
+				GEO_IP_BLOCKER_PLUGIN_FILE,
+				true
+			);
+
+			// Declare Cart and Checkout blocks compatibility.
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility(
+				'cart_checkout_blocks',
 				GEO_IP_BLOCKER_PLUGIN_FILE,
 				true
 			);
