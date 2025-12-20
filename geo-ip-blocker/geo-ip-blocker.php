@@ -36,24 +36,20 @@ if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'vendor/autoload.php' ) ) {
 }
 
 /**
- * Plugin Update Checker - Handled Externally
+ * Plugin Update Checker - GitHub Integration
  *
- * The plugin update checker should be configured externally via your
- * plugin management system. The built-in update checker has been disabled
- * to avoid conflicts with external update management.
- *
- * If you need to re-enable the built-in update checker, uncomment the code below:
- *
- * if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php' ) ) {
- *     require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
- *     $geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
- *         'https://github.com/JRG-code/Geo-and-IP-block',
- *         __FILE__,
- *         'geo-ip-blocker'
- *     );
- *     $geo_ip_blocker_update_checker->setBranch( 'main' );
- * }
+ * Enables automatic updates from the GitHub repository.
+ * Checks for new releases on the 'main' branch.
  */
+if ( file_exists( GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php' ) ) {
+	require_once GEO_IP_BLOCKER_PLUGIN_DIR . 'plugin-update-checker/plugin-update-checker.php';
+	$geo_ip_blocker_update_checker = YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+		'https://github.com/JRG-code/Geo-and-IP-block',
+		__FILE__,
+		'geo-ip-blocker'
+	);
+	$geo_ip_blocker_update_checker->setBranch( 'main' );
+}
 
 /**
  * Autoloader for plugin classes.
