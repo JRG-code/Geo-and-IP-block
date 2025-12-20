@@ -1,350 +1,327 @@
 # Geo & IP Blocker for WooCommerce
 
-[![WordPress Version](https://img.shields.io/badge/WordPress-%3E%3D5.8-blue.svg)](https://wordpress.org/)
-[![WooCommerce Version](https://img.shields.io/badge/WooCommerce-%3E%3D6.0-purple.svg)](https://woocommerce.com/)
-[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D7.4-green.svg)](https://www.php.net/)
-[![License](https://img.shields.io/badge/License-GPL%20v2-red.svg)](https://www.gnu.org/licenses/gpl-2.0.html)
+A powerful WordPress plugin to block or allow access to your WooCommerce store based on geographic location and IP addresses.
 
-Plugin completo para WordPress e WooCommerce que permite bloquear ou permitir acesso ao seu site com base em geolocalização (país/região) ou endereços IP.
+## Features
 
-## 📋 Índice
+- **Multi-level Blocking**: Block by country, region, or specific IP addresses
+- **CIDR Support**: Block entire IP ranges using CIDR notation
+- **Multiple Geolocation Providers**: Support for MaxMind, IP2Location, and IP-API.com
+- **Smart Caching**: Reduces API calls with WordPress Transients (30-minute cache)
+- **Local Database Support**: Optional offline geolocation using MaxMind GeoLite2
+- **Priority System**: Set rule priorities for fine-grained control
+- **Detailed Logging**: Track all blocked access attempts
+- **CDN Compatible**: Detects real IP behind Cloudflare, proxies, and load balancers
 
-- [Recursos](#-recursos)
-- [Requisitos](#-requisitos)
-- [Instalação](#-instalação)
-- [Configuração Inicial](#-configuração-inicial)
-- [Uso](#-uso)
-- [Hooks para Desenvolvedores](#-hooks-para-desenvolvedores)
-- [API](#-api)
-- [Performance](#-performance)
-- [Segurança](#-segurança)
-- [Troubleshooting](#-troubleshooting)
-- [Testes](#-testes)
-- [Contribuindo](#-contribuindo)
-- [Licença](#-licença)
+## Requirements
 
-## ✨ Recursos
+- PHP >= 7.4
+- WordPress >= 5.8
+- WooCommerce >= 6.0
 
-### Bloqueio Geográfico
-- Bloqueio ou permissão por país (lista completa de 250+ países)
-- Suporte a whitelist (apenas países selecionados) ou blacklist (bloquear países selecionados)
-- Geolocalização precisa usando MaxMind GeoIP2 ou IP-API
-- Cache de consultas de geolocalização para performance
+## Installation
 
-### Bloqueio por IP
-- Bloqueio de IPs individuais
-- Suporte a CIDR notation (`192.168.1.0/24`)
-- Suporte a ranges (`192.168.1.1-192.168.1.50`)
-- Suporte completo a IPv4 e IPv6
-- Whitelist e blacklist de IPs
+### Basic Installation
 
-### Integração WooCommerce
-- Bloqueio a nível de site inteiro ou apenas loja
-- Bloqueio específico de carrinho/checkout
-- Restrição por produto individual
-- Restrição por categoria de produto
-- Mensagens personalizadas para produtos bloqueados
-- Remoção automática de produtos bloqueados do carrinho
+1. Upload the `geo-ip-blocker` folder to `/wp-content/plugins/`
+2. Activate the plugin through the 'Plugins' menu in WordPress
+3. Configure your API keys in the settings
+4. Add blocking rules as needed
 
-### Logs e Estatísticas
-- Registro completo de tentativas de acesso
-- Filtros avançados (data, país, IP, motivo)
-- Estatísticas em tempo real
-- Exportação CSV (até 50.000 registros)
-- Gráficos com Chart.js (timeline, países, motivos)
-- Limpeza automática de logs antigos
+### Installation with Local Database (Recommended)
 
-### Templates Personalizáveis
-- 3 templates prontos (default, minimal, dark)
-- Suporte a override de template pelo tema
-- 7 shortcodes para conteúdo dinâmico
-- Totalmente responsivo
-- Acessibilidade (WCAG 2.1)
-
-### Ferramentas
-- Teste de geolocalização de IP
-- Atualização manual de database GeoIP
-- Import/Export de configurações (JSON)
-- Reset para configurações padrão
-- Presets de países por continente
-- Debug mode com visualização de logs
-
-### Performance
-- Cache multi-camadas (object cache + transients)
-- Compatibilidade com plugins de cache populares
-- Indexes otimizados no banco de dados
-- Rate limiting para proteção de API
-- Lazy loading quando possível
-
-### Segurança
-- Validação completa de inputs
-- Nonce verification em todas as ações
-- Prepared statements (prevenção de SQL injection)
-- Sanitização de HTML (prevenção de XSS)
-- CSRF protection
-- Rate limiting
-- Path traversal prevention
-
-## 📦 Requisitos
-
-### Mínimos
-- WordPress 5.8 ou superior
-- WooCommerce 6.0 ou superior
-- PHP 7.4 ou superior
-- MySQL 5.7 ou MariaDB 10.2 ou superior
-- Extensão PHP `curl` para APIs de geolocalização
-- Extensão PHP `json`
-
-### Recomendados
-- WordPress 6.4+
-- WooCommerce 8.0+
-- PHP 8.1+
-- MySQL 8.0+ ou MariaDB 10.6+
-- Servidor com pelo menos 128MB de memória RAM
-- Object cache (Redis/Memcached) para alta performance
-- SSL/HTTPS configurado
-
-## 🚀 Instalação
-
-### Via WordPress Admin
-
-1. Acesse **Plugins > Adicionar Novo**
-2. Procure por "Geo & IP Blocker"
-3. Clique em "Instalar Agora"
-4. Após instalação, clique em "Ativar"
-
-### Via Upload Manual
-
-1. Faça download do plugin
-2. Acesse **Plugins > Adicionar Novo > Enviar Plugin**
-3. Selecione o arquivo `.zip` e clique em "Instalar Agora"
-4. Após instalação, clique em "Ativar"
-
-### Via FTP
-
-1. Faça download e descompacte o plugin
-2. Envie a pasta `geo-ip-blocker` para `/wp-content/plugins/`
-3. Acesse **Plugins** no painel do WordPress
-4. Ative o plugin
-
-### Via WP-CLI
+For better performance and unlimited lookups, install the MaxMind GeoIP2 PHP library:
 
 ```bash
-wp plugin install geo-ip-blocker --activate
+cd wp-content/plugins/geo-ip-blocker
+composer install --no-dev
 ```
 
-### Pós-Instalação
+Then configure your MaxMind license key in the settings to enable automatic database updates.
 
-Após ativação, o plugin:
-- Cria tabelas no banco de dados automaticamente
-- Configura opções padrão
-- Adiciona menu "Geo & IP Blocker" no admin
+## Geolocation Providers
 
-## ⚙️ Configuração Inicial
+### 1. MaxMind GeoIP2 (Recommended)
 
-### 1. Escolher Provedor de Geolocalização
+**Pros:**
+- High accuracy
+- Local database option (unlimited lookups)
+- Commercial support available
 
-#### MaxMind GeoIP2 (Recomendado)
+**Setup:**
+1. Sign up at [MaxMind](https://www.maxmind.com/)
+2. Generate a license key
+3. Enter your Account ID and License Key in plugin settings
+4. (Optional) Enable local database for offline lookups
 
-1. Registre-se em: https://www.maxmind.com/en/geolite2/signup
-2. Gere uma chave de licença
-3. No plugin, vá em **Configurações > API de Geolocalização**
-4. Selecione "MaxMind GeoIP2"
-5. Cole sua chave de API
-6. Clique em "Testar Conexão"
-7. Salve as configurações
+**API Pricing:** Free tier: 1,000 requests/day
 
-#### IP-API (Gratuita, limite de 45 req/min)
+### 2. IP2Location
 
-1. Vá em **Configurações > API de Geolocalização**
-2. Selecione "IP-API"
-3. Salve as configurações
+**Pros:**
+- Good accuracy
+- Multiple data points
+- Commercial options
 
-**Nota:** IP-API tem limite de 45 requisições por minuto. Para sites com alto tráfego, use MaxMind.
+**Setup:**
+1. Sign up at [IP2Location](https://www.ip2location.com/)
+2. Get your API key
+3. Enter the key in plugin settings
 
-### 2. Configurar Modo de Bloqueio
+**API Pricing:** Free tier: 500 queries/day
 
-#### Modo Blacklist (Bloquear Países Selecionados)
+### 3. IP-API.com (Fallback)
 
-1. Vá em **Configurações > Geral**
-2. Em "Modo de Bloqueio", selecione "Blacklist"
-3. Em "Países Bloqueados", selecione os países que deseja bloquear
-4. Salve as configurações
+**Pros:**
+- Completely free
+- No API key required
+- Good for testing
 
-Exemplo: Bloquear apenas Rússia e China
-- Modo: Blacklist
-- Países bloqueados: RU, CN
+**Cons:**
+- Rate limited to 45 requests/minute
+- Less accurate than paid services
 
-#### Modo Whitelist (Permitir Apenas Países Selecionados)
+**Setup:** Enable in plugin settings (no API key required)
 
-1. Vá em **Configurações > Geral**
-2. Em "Modo de Bloqueio", selecione "Whitelist"
-3. Em "Países Permitidos", selecione os países permitidos
-4. Salve as configurações
+## Configuration
 
-Exemplo: Permitir apenas Brasil e Portugal
-- Modo: Whitelist
-- Países permitidos: BR, PT
+### API Provider Priority
 
-### 3. Configurar Ação de Bloqueio
+The plugin tries providers in this order:
+1. Local MaxMind database (if available)
+2. MaxMind API
+3. IP2Location API
+4. IP-API.com (free fallback)
 
-Escolha o que acontece quando um visitante é bloqueado:
+### Cache Settings
 
-- **Mensagem**: Exibe página com mensagem personalizada
-- **Redirecionamento**: Redireciona para URL específica
-- **Página WordPress**: Redireciona para página do WordPress
-- **HTTP 403**: Retorna erro 403 Forbidden
-
-### 4. Adicionar IPs à Whitelist/Blacklist (Opcional)
-
-Para bloquear ou permitir IPs específicos:
-
-1. Vá em **Configurações > IPs**
-2. Adicione IPs à whitelist ou blacklist
-
-Formatos suportados:
-```
-192.168.1.1              # IP individual
-192.168.1.0/24           # CIDR notation
-192.168.1.1-192.168.1.50 # Range com hífen
-2001:db8::1              # IPv6
-2001:db8::/32            # IPv6 CIDR
-```
-
-## 📖 Uso
-
-### Bloqueio Básico por País
+Location data is cached for 30 minutes by default. You can modify this:
 
 ```php
-// No painel administrativo:
-// 1. Ir em "Geo & IP Blocker" > "Configurações"
-// 2. Ativar plugin
-// 3. Selecionar modo "Blacklist"
-// 4. Adicionar países à lista de bloqueados
-// 5. Salvar
+add_filter( 'geo_ip_blocker_cache_expiration', function() {
+    return 3600; // 1 hour in seconds
+});
 ```
 
-### Bloqueio de Produto WooCommerce
+### Local Database Updates
 
-1. Edite um produto
-2. Role até o metabox "Geo Restrictions"
-3. Marque "Ativar restrições geográficas"
-4. Selecione os países que NÃO podem comprar
-5. Publique/atualize o produto
+If using the local MaxMind database, it updates automatically every week. Manual update:
 
-### Usar Templates Personalizados
-
-Copie o template padrão para seu tema:
-
-```bash
-# Copiar template
-cp wp-content/plugins/geo-ip-blocker/templates/blocked-message.php \
-   wp-content/themes/seu-tema/geo-blocker/blocked-message.php
+```php
+$geolocation = geo_ip_blocker_get_geolocation();
+$geolocation->update_local_database();
 ```
 
-Edite o arquivo no seu tema para personalizar.
+## Usage Examples
 
-### Shortcodes nas Mensagens
+### Get Current Visitor's Location
 
-Use shortcodes para conteúdo dinâmico:
+```php
+// Get full location data
+$location = geo_ip_blocker_get_current_location();
+echo $location['country_code']; // e.g., "US"
+echo $location['country_name']; // e.g., "United States"
+echo $location['region'];       // e.g., "California"
+echo $location['city'];         // e.g., "San Francisco"
 
+// Get just the country code
+$country = geo_ip_blocker_get_current_country(); // "US"
 ```
-Seu IP: [geo_blocker_ip]
-Seu país: [geo_blocker_country]
-Código do país: [geo_blocker_country_code]
-Motivo: [geo_blocker_reason]
-Data: [geo_blocker_date]
-Nome do site: [geo_blocker_site_name]
-URL do site: [geo_blocker_site_url]
+
+### Get Location for Specific IP
+
+```php
+$ip_location = geo_ip_blocker_get_ip_location( '8.8.8.8' );
+print_r( $ip_location );
 ```
 
-## 🔌 Hooks para Desenvolvedores
+### Clear Cache
+
+```php
+// Clear cache for specific IP
+geo_ip_blocker_clear_geo_cache( '8.8.8.8' );
+
+// Clear all location cache
+geo_ip_blocker_clear_geo_cache();
+```
+
+## IP Detection
+
+The plugin detects visitor IP addresses with support for:
+
+- **Cloudflare**: `CF-Connecting-IP` header
+- **Nginx Proxy**: `X-Real-IP` header
+- **Load Balancers**: `X-Forwarded-For` header
+- **Standard**: `REMOTE_ADDR`
+
+### Custom IP Detection
+
+```php
+add_filter( 'geo_ip_blocker_visitor_ip', function( $ip ) {
+    // Your custom IP detection logic
+    return $custom_ip;
+});
+```
+
+## Blocking Rules
+
+### Block by Country
+
+```php
+// Add rule via database
+$database = geo_ip_blocker_get_database();
+$database->add_rule([
+    'rule_type' => 'country',
+    'value'     => 'CN',  // China
+    'action'    => 'block',
+    'priority'  => 10
+]);
+```
+
+### Block by IP Range (CIDR)
+
+```php
+$database->add_rule([
+    'rule_type' => 'ip',
+    'value'     => '192.168.1.0/24',
+    'action'    => 'block',
+    'priority'  => 5
+]);
+```
+
+### Allow Specific IPs (Whitelist)
+
+```php
+$database->add_rule([
+    'rule_type' => 'ip',
+    'value'     => '1.2.3.4',
+    'action'    => 'allow',  // Overrides blocks
+    'priority'  => 1         // Higher priority
+]);
+```
+
+## Hooks & Filters
 
 ### Filters
 
-#### `geo_blocker_should_block`
-
-Modifica a decisão de bloqueio.
-
 ```php
-/**
- * @param bool   $should_block Se deve bloquear ou não
- * @param string $ip           Endereço IP do visitante
- * @param string $country_code Código do país (US, BR, etc)
- * @return bool
- */
-add_filter( 'geo_blocker_should_block', function( $should_block, $ip, $country_code ) {
-    // Nunca bloquear IPs que começam com 192.168
-    if ( strpos( $ip, '192.168' ) === 0 ) {
-        return false;
-    }
+// Modify cache expiration (default: 1800 seconds)
+add_filter( 'geo_ip_blocker_cache_expiration', function( $seconds ) {
+    return 3600; // 1 hour
+});
 
-    // Sempre bloquear país XX
-    if ( $country_code === 'XX' ) {
-        return true;
-    }
+// Modify blocked message
+add_filter( 'geo_ip_blocker_blocked_message', function( $message ) {
+    return 'Custom blocked message';
+});
 
-    return $should_block;
+// Custom blocked template
+add_filter( 'geo_ip_blocker_blocked_template', function( $template ) {
+    return get_template_directory() . '/blocked-page.php';
+});
+
+// Add custom geolocation provider
+add_filter( 'geo_ip_blocker_query_custom_provider', function( $data, $ip, $provider ) {
+    if ( $provider === 'my_custom_provider' ) {
+        // Your API call logic
+        return $location_data;
+    }
+    return $data;
 }, 10, 3 );
 ```
 
-#### `geo_blocker_message`
-
-Customiza a mensagem de bloqueio.
+### Actions
 
 ```php
-/**
- * @param string $message      Mensagem padrão
- * @param string $ip           IP do visitante
- * @param string $country_code Código do país
- * @return string
- */
-add_filter( 'geo_blocker_message', function( $message, $ip, $country_code ) {
-    return sprintf(
-        'Acesso negado do país %s. Entre em contato: suporte@exemplo.com',
-        $country_code
-    );
-}, 10, 3 );
+// Runs weekly to update local database
+add_action( 'geo_ip_blocker_update_database', function() {
+    // Custom database update logic
+});
 ```
 
-*(Consulte README.md completo para mais hooks)*
+## Performance Optimization
 
-## ⚡ Performance
+### Enable Local Database
 
-O plugin utiliza estratégia de cache multi-camadas para máxima performance.
+1. Install composer dependencies
+2. Configure MaxMind license key
+3. Enable "Use Local Database" in settings
+4. Plugin will download GeoLite2-City database automatically
 
-Consulte [README.md completo](./README.md) para detalhes sobre otimização.
+**Benefits:**
+- No API rate limits
+- Faster lookups
+- Works offline
+- Free unlimited queries
 
-## 🔒 Segurança
+### Cache Strategy
 
-Todos os aspectos de segurança foram implementados:
-- Validação de inputs
-- Prepared statements
-- Nonce verification
-- Rate limiting
-- XSS/CSRF protection
+- Location data cached for 30 minutes
+- Rate limiting prevents API abuse
+- Automatic fallback between providers
 
-## 🧪 Testes
+## Troubleshooting
+
+### Location Not Detected
+
+1. Check if visitor IP is public (not local/private)
+2. Verify API keys are correct
+3. Check provider rate limits
+4. Review error logs
+
+### Enable Debug Logging
+
+```php
+define( 'WP_DEBUG', true );
+define( 'WP_DEBUG_LOG', true );
+```
+
+Check `/wp-content/debug.log` for geolocation errors.
+
+### Clear All Cache
+
+```php
+geo_ip_blocker_clear_geo_cache();
+```
+
+## Security
+
+- All IP addresses validated with `filter_var()`
+- API responses sanitized
+- Rate limiting prevents abuse
+- CSRF protection on admin forms
+
+## Development
+
+### Run Tests
 
 ```bash
-# Executar todos os testes
-phpunit
-
-# Teste específico
-phpunit tests/test-ip-manager.php
+composer install
+./vendor/bin/phpunit
 ```
 
-Consulte [TESTING.md](./geo-ip-blocker/TESTING.md) para checklist completo.
+### Code Standards
 
-## 📄 Licença
+Follows WordPress Coding Standards:
 
-GPL v2 ou posterior
+```bash
+./vendor/bin/phpcs --standard=WordPress geo-ip-blocker/
+```
 
-## 📞 Suporte
+## License
+
+GPL v2 or later
+
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/JRG-code/Geo-and-IP-block/issues)
-- **Email**: support@exemplo.com
+- **Documentation**: [Plugin Wiki](#)
 
----
+## Changelog
 
-**Desenvolvido por [JRG Code](https://github.com/JRG-code)**
+### 1.0.0
+- Initial release
+- Multiple geolocation provider support
+- Local database option
+- Smart caching system
+- IP detection with CDN support
